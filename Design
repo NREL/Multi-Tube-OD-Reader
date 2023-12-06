@@ -1,0 +1,31 @@
+
+
+
+
+
+
+Opening/Welcome page
+    -see curves of active runs (redirect to larger view with more options, including temperature timecourse and distribution)
+    -see count of used/available ports (click to start new run)
+    -analyze recent runs
+    -log of session activity (keep it in a saved file ?)
+
+New-Run page
+  Actions
+    1-Samples X Replicates #numerical inputs at top initiates a column to name each. replicates defaults to 1, 2, 3... N
+    2-Show layout of which ports need to be blanked, with button to collect the blank
+    3-Show layout of which sample goes in each port, with button to begin data collection loop (and send back to welcome page)
+    Option to blink the LED on the device/port to be filled.
+
+Raw File
+  Metadata:
+    Date: Start date/time
+    Samples: table of sample name, replicate ID, device, port (include blank/reference)
+  Data:
+    Fermentation time, port voltage, temperature reading
+
+Analysis: (do these calculations at the time of collection?)
+  Histogram of temperature readings over the fermentation.
+  Growth Rates
+  Max OD
+  Average OD curve with StDev
