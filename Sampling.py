@@ -1,5 +1,11 @@
 import time
 
+
+
+"""
+See lots of good material at
+https://github.com/posit-dev/py-shiny/blob/915b4c885ba0e176e4d3db7ba6d1519a9d4bd0b6/examples/model-score/app.py
+"""
 def metadata():
     """
     set the metadata for the file
@@ -12,6 +18,7 @@ def metadata():
 def available_ports():
     """
     Get list of connected devices and ports. keep track of used/unused ports so we can run multiple experiments asyncronously.
+    Is there enough difference between no tube and empty tube and tube with water? Maybe these can indicate what's happening.
     """
 
 
@@ -33,9 +40,13 @@ def timepoint():
 
 class TimeCourse:
     def __init__(self, interval, interval_type):
-        self.interval_type = 'min'
-        self.interval = 10
-
+        self.interval_type = 'min' #I'm treating these as defaults, though that is likely incorrect
+        self.interval = 10  #I'm treating these as defaults, though that is likely incorrect
+        """
+        See reactive.invalidate_later()
+            invalidateLater(millis, session = getDefaultReactiveDomain())
+            Schedules the current reactive context to be invalidated in the given number of milliseconds.
+        """
 
 def timecourse(interval = 10, interval_type = 'min', *args, **kwargs):
     """
