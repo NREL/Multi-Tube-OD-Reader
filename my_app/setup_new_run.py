@@ -188,6 +188,7 @@ def setup_server(input, output, session, usage_status_reactive):
 
     @reactive.calc
     def sort_blank_readings():
+        global blank_readings
         # sort blank readings and ports blanked by the port number, keep pairing.
         local_blanks = deepcopy(ports_blanked())
         for device,ports in local_blanks.items():
@@ -261,12 +262,13 @@ def setup_server(input, output, session, usage_status_reactive):
     @reactive.Effect
     @reactive.event(input.commit_reference)
     def _():
+        global blank_readings
         local_blanks = deepcopy(ports_blanked())
-        
-        #read blank for reference port
         device, port = chosen_ref_device_port()
+        #read blank for reference port
         blank_readings[device].append(average_measurement(n_measurements(device, ports=[port], n_reps= 9))[0])
-        local_blanks[device].append(port)  
+        local_blanks[device].append(port)
+        ports_blanked.set(local_blanks)
         sort_blank_readings()
         ui.update_navs("setup_run_navigator", selected = "start")
 
@@ -362,13 +364,9 @@ def setup_server(input, output, session, usage_status_reactive):
         req(ports_blanked(), reference_ports())
         for device, ports in ports_blanked().items():
             choices = [f"{app.name_for_sn(device)}:{x}" for x in ports]
-        try:    
-            if input.universal_reference() == True: #still need to work on universal reference
-                for device, ports in reference_ports().items():
-                    choices = [f"{app.name_for_sn(device)}:{x}" for x in ports]
-        except:
-            print("at end of setup_new_run.py triggered by no universal_ref being rendered.")
-            None #This fails if input universal_ref isn't rendered. Need to change this to the same logic as input universal_reference.
+        if input.universal_reference() == True: #still need to work on universal reference
+            for device, ports in reference_ports()[0].items():
+                choices = [f"{app.name_for_sn(device)}:{x}" for x in ports]
         return ui.input_radio_buttons("chosen_ref", label= "Make sure the Reference Tube is in place before proceeding.", choices=choices, selected = None)
            
     return input.commit_start
