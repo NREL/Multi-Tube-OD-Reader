@@ -5,7 +5,7 @@ from copy import deepcopy
 import numpy as np
 import pickle
 import app
-from sampling import get_new_ports, flatten_list, n_measurements, average_measurement, set_usage_status, configure_device
+from sampling import get_new_ports, flatten_list, n_measurements, average_measurement, set_usage_status, configure_device, bad_name
 from numeric_module import controlled_numeric_server, controlled_numeric_ui
 import subprocess
 import json
@@ -208,10 +208,10 @@ def setup_server(input, output, session, usage_status_reactive):
     def _():
         name = input.experiment_name()
         # could be neat to refactor this into a list of conditionals that decide whether the list of modals are produced
-        if os.path.exists(name+".tsv") or not name.isalnum(): #str.isalnum() = is str all numbers/letters/underscores
+        if os.path.exists(name+".tsv") or bad_name(name): 
             file_exists = ui.modal(
                 "Please use a different name.",
-                "Use only letters, numbers or underscores.",
+                "You cannot reuse old names or use characters other than letters, numbers, spaces and underscores.",
                 title="Invalid Name",
                 easy_close=True,
                 footer=None,
@@ -292,9 +292,10 @@ def setup_server(input, output, session, usage_status_reactive):
             blanks = json.dumps(blank_readings)  
             ports = json.dumps(ports_blanked())  
             test = json.dumps(test_ports)        
-            o = input.experiment_name()
+            name = input.experiment_name()
+            safe_name = name.replace(' ', '_')
             t= input.interval()
-            command = ["python", "my_app/new_run.py", "-ref", ref, "-blanks", blanks, "-ports", ports, "-test", test, "-o", f"{o}.tsv", "-t", f"{t}"]
+            command = ["python", "my_app/new_run.py", "-ref", ref, "-blanks", blanks, "-ports", ports, "-test", test, "-o", f"{safe_name}.tsv", "-t", f"{t}"]
             pid = subprocess.Popen(command, creationflags = subprocess.CREATE_NO_WINDOW).pid
             for i in range(0, 6):
                 bar.set(i, message = "Starting Run", detail= "Measuring voltages")
@@ -366,6 +367,7 @@ def setup_server(input, output, session, usage_status_reactive):
                 for device, ports in reference_ports().items():
                     choices = [f"{app.name_for_sn(device)}:{x}" for x in ports]
         except:
+            print("at end of setup_new_run.py triggered by no universal_ref being rendered.")
             None #This fails if input universal_ref isn't rendered. Need to change this to the same logic as input universal_reference.
         return ui.input_radio_buttons("chosen_ref", label= "Make sure the Reference Tube is in place before proceeding.", choices=choices, selected = None)
            

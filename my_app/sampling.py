@@ -51,7 +51,13 @@ https://stackoverflow.com/questions/28025402/how-to-kill-subprocesses-when-paren
 Do i need a pickle for each or is it kept running? probably
 """
 
-
+def bad_name(st): 
+    for char in st: 
+        if char.isalnum() or char=='_' or char==' ': 
+            continue 
+        else:
+            return True
+        return False
 
 def key_for_value(my_dict:dict, value):
     return list(my_dict.keys())[list(my_dict.values()).index(value)]
