@@ -69,7 +69,7 @@ def setup_ui():
                 ui.nav_panel(None, #this will be replaced by a ui.TagList of ui's, one for each device maybe
                     ui.h2({"style": "text-align: center;"}, "Prepare the Device"),
                     ui.div({"style": "text-align: center;"},
-                        ui.h4({"style": "text-align: center;"}, ui.output_text("device_text")),
+                        ui.h4({"style": "text-align: center;"}, ui.output_text("device_to_blank_text")),
                         ui.output_ui("choice_of_ports_to_blank"),
                         ui.row(
                             ui.column(6,
@@ -350,7 +350,7 @@ def setup_server(input, output, session, usage_status_reactive):
 
     @output
     @render.text
-    def device_text():
+    def device_to_blank_text():
         req(current_device_or_ports())
         input.commit_blanks()
         input.cancel_blanks()
@@ -361,12 +361,18 @@ def setup_server(input, output, session, usage_status_reactive):
     @render.ui
     @reactive.event(input.commit_blanks)
     def choose_ref_port():
-        req(ports_blanked(), reference_ports())
+        req(ports_blanked())
+        choices = []
         for device, ports in ports_blanked().items():
-            choices = [f"{app.name_for_sn(device)}:{x}" for x in ports]
-        if input.universal_reference() == True: #still need to work on universal reference
-            for device, ports in reference_ports()[0].items():
-                choices = [f"{app.name_for_sn(device)}:{x}" for x in ports]
+            for x in ports:
+                choices.append(f"{app.name_for_sn(device)}:{x}") 
+        try: #input.universal_reference() may not be defined. I don't know how to deal with  potentially non-existant variables except to try them
+            if input.universal_reference() is not None and input.universal_reference() == True: 
+                choices = []
+                for device, ports in reference_ports()[0].items():
+                    for x in ports:
+                        choices.append(f"{app.name_for_sn(device)}:{x}")
+        except: None
         return ui.input_radio_buttons("chosen_ref", label= "Make sure the Reference Tube is in place before proceeding.", choices=choices, selected = None)
            
     return input.commit_start
