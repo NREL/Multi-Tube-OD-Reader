@@ -31,13 +31,13 @@ def accordion_plot_ui(value="value"):
 def accordion_plot_server(input, output, session, list="list"):
     
     @reactive.calc()
-    def file_name():
+    def file_path():
         return f"C:/Users/shebdon/Documents/GitHub/MultiTubeOD/{list[11]}"
     
     @output
     @render.text()
     def experiment_name():
-        return list[11].split(".")[0]
+        return list[11].split(".")[0] #to remove .tsv extension
 
     @reactive.calc
     def test_ports_usage():
@@ -51,10 +51,10 @@ def accordion_plot_server(input, output, session, list="list"):
         "".join(pretty_ports)
         return pretty_ports
     
-    @reactive.file_reader(file_name(), interval_secs=10)
+    @reactive.file_reader(file_path(), interval_secs=10)
     def data():
         try:
-            return pandas.read_csv(file_name(), delimiter="\t",header=4)
+            return pandas.read_csv(file_path(), delimiter="\t",header=4)
         except:
             print("can't open file")
             return
@@ -94,11 +94,8 @@ def accordion_plot_server(input, output, session, list="list"):
         running_pickle = {}
         with open(app.CURRENT_RUNS_PICKLE, 'rb') as f:
             running_pickle = pickle.load(f)
-        try:
-            pid = [i for i in running_pickle if running_pickle[i] == list][0]
-            running_pickle.pop(pid, None)
-        except:
-            print("problems collecting a PID")
+        pid = [i for i in running_pickle if running_pickle[i] == list][0]
+        running_pickle.pop(pid, None)
         try:
             p = psutil.Process(pid)
             p.terminate()
@@ -109,7 +106,13 @@ def accordion_plot_server(input, output, session, list="list"):
             pickle.dump(running_pickle, f, pickle.DEFAULT_PROTOCOL)
         for sn, ports in test_ports_usage().items():
             set_usage_status(sn=sn, ports_list= ports, status = 0)
-        set_usage_status(sn = ref_device_port()[0], ports_list=ref_device_port()[1], status = 0)
+        ref_not_used = True
+        for experiment in running_pickle.values():
+            if list[3] == experiment[3]:
+                ref_not_used = False
+                break
+        if ref_not_used:
+            set_usage_status(sn = ref_device_port()[0], ports_list=ref_device_port()[1], status = 0)
         ui.modal_remove()
 
 
