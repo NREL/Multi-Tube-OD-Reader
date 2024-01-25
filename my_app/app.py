@@ -57,10 +57,18 @@ app_ui = ui.page_navbar(
     id = "front_page" 
     )
 
-'''
-Need to capture warning that no labjacks are connected.
-'''
 def server(input: Inputs, output: Outputs, session: Session):
+    
+    @reactive.Effect
+    def _():
+        global hardware
+        if hardware == {}:
+            no_labjack_connection = ui.modal("Please connect a device and restart the program.",
+                title = "No Devices Detected",
+                footer = None,
+                easy_close= False
+            )
+            ui.modal_show(no_labjack_connection)
 
     @reactive.file_reader(CURRENT_RUNS_PICKLE, priority=-1)
     def watch_runs_pickle():
