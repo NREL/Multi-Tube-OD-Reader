@@ -1,28 +1,26 @@
 from LabJackPython import Close, LabJackException
-import u3
+from memory_profiler import profile
 import math
 import argparse
 from time import time, sleep, monotonic
 from datetime import datetime
 from json import loads
 from app import sn_for_name, name_for_sn
-from sampling import configure_device, average_measurement, n_measurements, get_temp
-import gc
+from sampling import configure_device, get_temp, full_measurement
 
 t_zero_ref_voltage = None
 t_zero_voltage_list = []
 parser = argparse.ArgumentParser(description="Collect samples from U3 LabJack instrument, infinit loop.", 
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-parser.add_argument('-ref', type = str, help = 'str(name:port) for choses reference port')
-parser.add_argument('-blanks',  type = loads, help="blank_readings dict of sn:[ports for all ports including ref]")
-parser.add_argument('-ports',  type = loads, help="blanked_ports dict of sn[ports] for all ports including ref")
-parser.add_argument('-test', type = loads, help = "test_ports dict of sn:[ports] for non-ref ports")
-parser.add_argument('-o', '--out-file')
-parser.add_argument('-t', '--time-interval', type = float, help= "time interval in minute between reads", default=10)
+parser.add_argument('-ref', type = str, default= 'Big Red:1', help = 'str(name:port) for choses reference port')
+parser.add_argument('-blanks',  type = loads, default = {'320106158':[0.4, 0.4, 0.4, 0.4]}, help="blank_readings dict of sn:[ports for all ports including ref]")
+parser.add_argument('-ports',  type = loads, default = {'320106158':[1,2,3,4]}, help="blanked_ports dict of sn[ports] for all ports including ref")
+parser.add_argument('-test', type = loads, default = {'320106158':[1]}, help = "test_ports dict of sn:[ports] for non-ref ports")
+parser.add_argument('-o', '--out-file', default = 'test.tsv')
+parser.add_argument('-t', '--time-interval', type = float, help= "time interval in minute between reads", default=0.05)
 
 args = parser.parse_args()
-
 interval = args.time_interval * 60
 ref = args.ref
 blanks = args.blanks
@@ -55,14 +53,14 @@ def get_header_rows(ref=ref, ref_device=ref_device, ref_blank=ref_blank, test:di
     empty_row[0]= datetime.fromtimestamp(time()) #replace first item with date-time
     return [device_row, port_row, status_row, empty_row, header_row], time_zero_voltages
 
+@profile(precision= 5)
 def get_measurement_row(test:dict = test, ref_port = ref_port, ref_device = ref_device):
     temperatures = []
     measurements_row = []
     n_reps = 9
-    measurements_row =average_measurement(n_measurements(ref_device, ports=[ref_port], n_reps= n_reps))
+    measurements_row =full_measurement(ref_device, ports=[ref_port], n_reps= n_reps)
     for device, ports in test.items():
-        per_device = average_measurement(n_measurements(device, ports=ports, n_reps= n_reps))
-        measurements_row = measurements_row + per_device
+        measurements_row = measurements_row + full_measurement(device, ports=ports, n_reps= n_reps)
         temperatures.append(get_temp(device))
     temp = sum(temperatures)/len(temperatures)
     timepoint = monotonic()
@@ -81,6 +79,7 @@ def save_row(row:list, file = file ):
 
 header_rows, t_zero_voltage_list=get_header_rows()
 
+
 with open(file, "a+") as f:
     for row in header_rows:
         row = (str(x) for x in row)
@@ -89,14 +88,17 @@ with open(file, "a+") as f:
 
 t_zero_ref_voltage = t_zero_voltage_list.pop(0)
 starttime = monotonic()
+
+def per_iteration():
+    new_row, temp, timepoint = get_measurement_row()
+    new_OD = voltage_to_OD(v_ref_zero = t_zero_ref_voltage, time_zero_voltages=t_zero_voltage_list, measurements=new_row)
+    new_OD.insert(0, temp)
+    new_OD.insert(0, (timepoint - starttime)/60)
+    save_row(new_OD)
+    sleep(interval - (monotonic()-starttime) % interval)
+
 while True:
     try:
-        new_row, temp, timepoint = get_measurement_row()
-        new_OD = voltage_to_OD(v_ref_zero = t_zero_ref_voltage, time_zero_voltages=t_zero_voltage_list, measurements=new_row)
-        new_OD.insert(0, temp)
-        new_OD.insert(0, (timepoint - starttime)/60)
-        save_row(new_OD)
-        gc.collect()
-        sleep(interval - (monotonic()-starttime) % interval)
+        per_iteration()
     except LabJackException: 
-        continue 
+        break

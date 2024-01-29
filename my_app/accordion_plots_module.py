@@ -1,12 +1,10 @@
 from shiny import module, ui, reactive, render, req, Inputs, Outputs, Session
-import matplotlib.pyplot as plt  
-import numpy as np
+import matplotlib.pyplot as plt
 import pandas
 import pickle
 import app
 from sampling import set_usage_status
 import psutil
-import time
 import json
 
 

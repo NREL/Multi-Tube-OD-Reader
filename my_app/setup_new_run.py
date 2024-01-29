@@ -2,10 +2,9 @@ from shiny import module, ui, reactive, render, req, Inputs, Outputs, Session
 from LabJackPython import Close
 import u3
 from copy import deepcopy
-import numpy as np
 import pickle
 import app
-from sampling import get_new_ports, flatten_list, n_measurements, average_measurement, set_usage_status, configure_device, bad_name
+from sampling import get_new_ports, flatten_list, full_measurement, set_usage_status, configure_device, bad_name
 from numeric_module import controlled_numeric_server, controlled_numeric_ui
 import subprocess
 import json
@@ -250,7 +249,7 @@ def setup_server(input, output, session, usage_status_reactive):
     def _():
         global blank_readings
         local_blanks = deepcopy(ports_blanked())
-        measure_blanks = average_measurement(n_measurements(current_device_or_ports()[0], ports=input.choice_of_ports_to_blank(), n_reps= 9))
+        measure_blanks = full_measurement(current_device_or_ports()[0], ports=input.choice_of_ports_to_blank(), n_reps= 9)
         for x in measure_blanks:
             blank_readings[current_device_or_ports()[0]].append(x)
         local_blanks[current_device_or_ports()[0]] += [int(x) for x in input.choice_of_ports_to_blank()]
@@ -266,7 +265,7 @@ def setup_server(input, output, session, usage_status_reactive):
         local_blanks = deepcopy(ports_blanked())
         device, port = chosen_ref_device_port()
         #read blank for reference port
-        blank_readings[device].append(average_measurement(n_measurements(device, ports=[port], n_reps= 9))[0])
+        blank_readings[device].append(full_measurement(device, ports=[port], n_reps= 9))[0]
         local_blanks[device].append(port)
         ports_blanked.set(local_blanks)
         sort_blank_readings()

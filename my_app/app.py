@@ -65,10 +65,17 @@ def server(input: Inputs, output: Outputs, session: Session):
         if hardware == {}:
             no_labjack_connection = ui.modal("Please connect a device and restart the program.",
                 title = "No Devices Detected",
-                footer = None,
+                footer = ui.input_action_button("close_app", "Exit App"),
                 easy_close= False
             )
             ui.modal_show(no_labjack_connection)
+
+    @reactive.Effect
+    @reactive.event(input.close_app)
+    async def _():
+        await session.close()
+        #how to close the terminal when the browser closes?
+       
 
     @reactive.file_reader(CURRENT_RUNS_PICKLE, priority=-1)
     def watch_runs_pickle():
