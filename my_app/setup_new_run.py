@@ -1,16 +1,14 @@
 from shiny import module, ui, reactive, render, req, Inputs, Outputs, Session
 from LabJackPython import Close
-import u3
 from copy import deepcopy
 import pickle
-import app
 from sampling import get_new_ports, flatten_list, full_measurement, set_usage_status, configure_device, bad_name
 from numeric_module import controlled_numeric_server, controlled_numeric_ui
 import subprocess
 import json
 from time import sleep
 import os
-
+import app as app_main
 
 blank_readings = "hello"
 test_ports = {}
@@ -199,7 +197,7 @@ def setup_server(input, output, session, usage_status_reactive):
     def chosen_ref_device_port():
         device, port = str(input.chosen_ref()).split(":") 
         port = int(port)
-        device = app.sn_for_name(device)
+        device = app_main.sn_for_name(device)
         return device, port
 
     #################   Navigation         ############################
@@ -265,7 +263,7 @@ def setup_server(input, output, session, usage_status_reactive):
         local_blanks = deepcopy(ports_blanked())
         device, port = chosen_ref_device_port()
         #read blank for reference port
-        blank_readings[device].append(full_measurement(device, ports=[port], n_reps= 9))[0]
+        blank_readings[device].append(full_measurement(device, ports=[port], n_reps= 9)[0])
         local_blanks[device].append(port)
         ports_blanked.set(local_blanks)
         sort_blank_readings()
@@ -310,7 +308,7 @@ def setup_server(input, output, session, usage_status_reactive):
             set_usage_status(sn = device, ports_list=[port], status = 2)
             running_experiments = {}
             try:
-                with open(app.CURRENT_RUNS_PICKLE, 'rb') as f:
+                with open(app_main.CURRENT_RUNS_PICKLE, 'rb') as f:
                     running_experiments = pickle.load(f)
             except EOFError:
                 None #This get's thrown if the pickle is empty, empty pickle isn't a problem
@@ -318,7 +316,7 @@ def setup_server(input, output, session, usage_status_reactive):
             for i in range(5, 11):
                 bar.set(i, message = "Starting Run", detail= "Calculating OD")
                 sleep(0.2)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
-            with open(app.CURRENT_RUNS_PICKLE, 'wb') as f:
+            with open(app_main.CURRENT_RUNS_PICKLE, 'wb') as f:
                 pickle.dump(running_experiments, f, pickle.DEFAULT_PROTOCOL)               
             
             #Still need to figure out how to go back to Home, but reset_button() is a good start.
@@ -344,7 +342,7 @@ def setup_server(input, output, session, usage_status_reactive):
         device, port = chosen_ref_device_port()
         test_ports = deepcopy(ports_blanked())
         test_ports[device].pop(test_ports[device].index(port))
-        pre_text = ["\n".join([str(app.name_for_sn(key)), ",".join(map(str, values))]) for key,values in test_ports.items()]
+        pre_text = ["\n".join([str(app_main.name_for_sn(key)), ",".join(map(str, values))]) for key,values in test_ports.items()]
         return '\n\n'.join(pre_text)
 
     @output
@@ -354,7 +352,7 @@ def setup_server(input, output, session, usage_status_reactive):
         input.commit_blanks()
         input.cancel_blanks()
         input.commit_setup()
-        return f"Ports from {app.name_for_sn(current_device_or_ports()[0])} to blank next:"
+        return f"Ports from {app_main.name_for_sn(current_device_or_ports()[0])} to blank next:"
     
     @output
     @render.ui
@@ -364,13 +362,13 @@ def setup_server(input, output, session, usage_status_reactive):
         choices = []
         for device, ports in ports_blanked().items():
             for x in ports:
-                choices.append(f"{app.name_for_sn(device)}:{x}") 
+                choices.append(f"{app_main.name_for_sn(device)}:{x}") 
         try: #input.universal_reference() may not be defined. I don't know how to deal with  potentially non-existant variables except to try them
             if input.universal_reference() is not None and input.universal_reference() == True: 
                 choices = []
                 for device, ports in reference_ports()[0].items():
                     for x in ports:
-                        choices.append(f"{app.name_for_sn(device)}:{x}")
+                        choices.append(f"{app_main.name_for_sn(device)}:{x}")
         except: None
         return ui.input_radio_buttons("chosen_ref", label= "Make sure the Reference Tube is in place before proceeding.", choices=choices, selected = None)
            

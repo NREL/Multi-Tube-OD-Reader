@@ -1,6 +1,5 @@
 from shiny import module, ui, reactive, render, req
 from sampling import connected_device, valid_sn
-import app
 import u3
 from LabJackPython import Close
 import time
@@ -44,16 +43,16 @@ def configure_server(input, output, session):
     @output
     @render.ui
     def Select_device():
-        choices = [app.name_for_sn(sn) for sn in valid_sn()]
+        choices = [app_main.name_for_sn(sn) for sn in valid_sn()]
         return ui.input_select("device", "Select a Device to interact with", choices=choices)
 
     @reactive.Effect
     @reactive.event(input.set_name)
     def _():
         req(input.new_name() != "")
-        d = connected_device(serialNumber=app.sn_for_name(input.device()))
+        d = connected_device(serialNumber=app_main.sn_for_name(input.device()))
         d.setName(input.new_name())
-        choices = [app.name_for_sn(sn) for sn in valid_sn()]
+        choices = [app_main.name_for_sn(sn) for sn in valid_sn()]
         ui.update_select("device", label = "Select a Device to interact with", choices = choices)
         ui.update_text("new_name", label = "New Name for the Device", placeholder = "--Enter Name Here--", value = "")
         Close()
@@ -61,7 +60,7 @@ def configure_server(input, output, session):
     @reactive.Effect
     @reactive.event(input.blink)
     def _():
-        sn = app.sn_for_name(input.device())
+        sn = app_main.sn_for_name(input.device())
         d = connected_device(sn)
         delay = 0.15 #period between flashes of LED
 
@@ -74,3 +73,5 @@ def configure_server(input, output, session):
             time.sleep(delay)
             c += 1
         Close()
+
+import app as app_main

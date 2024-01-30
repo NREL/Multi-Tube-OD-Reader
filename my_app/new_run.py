@@ -5,7 +5,7 @@ import argparse
 from time import time, sleep, monotonic
 from datetime import datetime
 from json import loads
-from app import sn_for_name, name_for_sn
+import app as app_main
 from sampling import configure_device, get_temp, full_measurement
 
 t_zero_ref_voltage = None
@@ -31,7 +31,7 @@ test = args.test
 
 ref_device_name, ref_port = ref.split(":")
 ref_port = int(ref_port)
-ref_device = sn_for_name(ref_device_name)
+ref_device = app_main.sn_for_name(ref_device_name)
 ref_blank = blanks[ref_device].pop(all_ports[ref_device].index(ref_port)) #use index in one list to define position in second list
 
 #Still need to figure out how to run the DAQ
@@ -41,14 +41,14 @@ def get_header_rows(ref=ref, ref_device=ref_device, ref_blank=ref_blank, test:di
     status_row = ["Status","", "Reference"]
     header_row = ["Time (min)", "Temperature"]
     time_zero_voltages = [ref_blank]
-    test = {name_for_sn(key):val for (key, val) in test.items()}
+    test = {app_main.name_for_sn(key):val for (key, val) in test.items()}
     for device, ports in test.items():
         for x,port in enumerate(ports): #x is position of port in list, port is port name
             device_row.append(device)
             port_row.append(port)
             status_row.append("Test")
             header_row.append(f"{device}:{port}")
-            time_zero_voltages.append(blanks[sn_for_name(device)][x]) #x means by position
+            time_zero_voltages.append(blanks[app_main.sn_for_name(device)][x]) #x means by position
     empty_row = ["" for x in status_row]
     empty_row[0]= datetime.fromtimestamp(time()) #replace first item with date-time
     return [device_row, port_row, status_row, empty_row, header_row], time_zero_voltages
@@ -68,8 +68,7 @@ def get_measurement_row(test:dict = test, ref_port = ref_port, ref_device = ref_
 
 def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
     v_ref_now = measurements.pop(0)
-    ODs = [math.log10(v_ref_zero/v_ref_now*v_test_now/v_test_zero) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
-    return ODs 
+    return [math.log10(v_ref_zero/v_ref_now*v_test_now/v_test_zero) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
 
 def save_row(row:list, file = file ):
     row = (str(x) for x in row)
@@ -89,6 +88,7 @@ with open(file, "a+") as f:
 t_zero_ref_voltage = t_zero_voltage_list.pop(0)
 starttime = monotonic()
 
+@profile(precision= 5)
 def per_iteration():
     new_row, temp, timepoint = get_measurement_row()
     new_OD = voltage_to_OD(v_ref_zero = t_zero_ref_voltage, time_zero_voltages=t_zero_voltage_list, measurements=new_row)

@@ -1,10 +1,10 @@
 from LabJackPython import Close, LabJackException
 import u3
-#import numpy as np
 import statistics
 import pickle
 from time import sleep
 from memory_profiler import profile
+
 
 def retry(times, exceptions):
     """
@@ -65,9 +65,10 @@ def key_for_value(my_dict:dict, value):
 
 
 def valid_sn():
-    devices = u3.openAllU3()
-    sn = list(devices.keys())
+    d = u3.openAllU3()
+    sn = list(d.keys())
     Close()
+    del d
     return sn
 
 
@@ -99,6 +100,7 @@ def single_measurement(serialNumber, ports:list = [1,2,3,4,5,6,7,8]):
     bits = d.getFeedback([u3.AIN(PositiveChannel=int(x)-1, NegativeChannel=31, LongSettling=True, QuickSample=False) for x in ports])
     voltages = d.binaryListToCalibratedAnalogVoltages(bits, isLowVoltage= True, isSingleEnded= True, isSpecialSetting= False )
     Close()
+    del d
     return voltages
 """
 @retry(6,(LabJackException))
@@ -108,7 +110,7 @@ def n_measurements(serialNumber, ports:list = [1,2,3,4,5,6,7,8], n_reps = 3):
 def average_measurement(array):
     return np.ndarray.tolist(np.mean(array, axis = 0))
 """
-@profile(precision= 4)
+
 def full_measurement(serialNumber, ports:list, n_reps):
     try:
         d = u3.U3(firstFound = False, serial = serialNumber)
@@ -120,6 +122,7 @@ def full_measurement(serialNumber, ports:list, n_reps):
         if sleep(1/n_reps) is None:   
             data.append(d.binaryListToCalibratedAnalogVoltages(d.getFeedback([u3.AIN(PositiveChannel=int(x)-1, NegativeChannel=31, LongSettling=True, QuickSample=False) for x in ports]), isLowVoltage= True, isSingleEnded= True, isSpecialSetting= False ))
     Close()
+    del d
     out = []
     for i,first_list in enumerate(data[0]):
         out.append(statistics.mean(list[i] for list in data))
@@ -130,11 +133,12 @@ def full_measurement(serialNumber, ports:list, n_reps):
 def stdev_measurement(array = n_measurements):
     return np.std(array, axis = 0)
 """
-@profile(precision= 4)
+
 def get_temp(serialNumber):
    d = u3.U3(firstFound = False, serial = serialNumber)
    temp = kelvin_to_celcius(d.getTemperature())
    Close()
+   del d
    return temp
 
 def add_to_file(file_name, list):
