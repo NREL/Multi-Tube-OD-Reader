@@ -6,15 +6,6 @@ import app
 from sampling import set_usage_status
 import psutil
 import json
-import time
-
-
-"""
-See add/remove accordion from shiny webpage
-https://shiny.posit.co/py/api/ui.remove_accordion_panel.html#shiny.ui.remove_accordion_panel
-https://shiny.posit.co/py/api/ui.insert_accordion_panel.html 
-
-"""
 
 @module.ui
 def accordion_plot_ui(value="value"):
