@@ -100,4 +100,4 @@ while True:
     try:
         per_iteration()
     except Exception as e:
-        save_row([e])
+        save_row([f"#{e}"])

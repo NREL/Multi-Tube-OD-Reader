@@ -63,7 +63,6 @@ def configure_device(serialNumber, DAC_voltages, ports):
 
 @retry(max_retries = 40, wait_time = 0.723)
 def connected_device(serialNumber):
-    print("trying to connect to device")
     return u3.U3(firstFound = False, serial = serialNumber)
 
 def single_measurement(serialNumber, ports:list = [1,2,3,4,5,6,7,8]): 

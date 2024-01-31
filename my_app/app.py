@@ -12,7 +12,6 @@ from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_s
 
 serials = valid_sn()
 hardware = {sn:connected_device(sn).getName() for sn in serials}
-print(hardware, "hardware 1")
 Close()
 
 def name_for_sn(sn):
