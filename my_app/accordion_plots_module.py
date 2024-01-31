@@ -37,6 +37,7 @@ def accordion_plot_server(input, output, session, list="list"):
     @output
     @render.text
     def ports_text():
+        print(app.hardware)
         pretty_ports = [f"{app.name_for_sn(sn)}:{ports}" for sn, ports in test_ports_usage().items()]
         "".join(pretty_ports)
         return pretty_ports

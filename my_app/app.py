@@ -6,13 +6,13 @@ from accordion_plots_module import accordion_plot_ui, accordion_plot_server
 import shinyswatch
 from shiny import App, Inputs, Outputs, Session, reactive, render, ui, req
 import pickle
-from sampling import make_usage_status_pickle, make_current_runs_pickle
-from time import sleep
+from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device
 
 
-all_U3 = u3.openAllU3()
-serials = list(all_U3.keys())
-hardware = {sn:all_U3[object].getName() for sn, object in zip(serials, all_U3)}
+
+serials = valid_sn()
+hardware = {sn:connected_device(sn).getName() for sn in serials}
+print(hardware, "hardware 1")
 Close()
 
 def name_for_sn(sn):

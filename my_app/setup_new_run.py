@@ -233,6 +233,7 @@ def setup_server(input, output, session, usage_status_reactive):
                 print("Exception updating in setup new run")
                 sleep(1)
                 configure_device(device, DAC_voltages= [5,2.4], ports = [])
+                print("retried configure device")
             Close()
         ui.update_navs("setup_run_navigator", selected="blanks")
         

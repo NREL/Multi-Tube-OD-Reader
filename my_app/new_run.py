@@ -53,7 +53,6 @@ def get_header_rows(ref=ref, ref_device=ref_device, ref_blank=ref_blank, test:di
     empty_row[0]= datetime.fromtimestamp(time()) #replace first item with date-time
     return [device_row, port_row, status_row, empty_row, header_row], time_zero_voltages
 
-@profile(precision= 5)
 def get_measurement_row(test:dict = test, ref_port = ref_port, ref_device = ref_device):
     temperatures = []
     measurements_row = []
@@ -100,5 +99,5 @@ def per_iteration():
 while True:
     try:
         per_iteration()
-    except LabJackException: 
-        break
+    except Exception as e:
+        save_row([e])

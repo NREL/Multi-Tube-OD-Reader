@@ -1,4 +1,4 @@
-from LabJackPython import Close, LabJackException
+from LabJackPython import Close, LJE_LABJACK_NOT_FOUND
 import u3
 import statistics
 import pickle
@@ -6,50 +6,23 @@ from time import sleep
 from memory_profiler import profile
 
 
-def retry(times, exceptions):
-    """
-    Retry Decorator
-    Retries the wrapped function/method `times` times if the exceptions listed
-    in ``exceptions`` are thrown
-    :param times: The number of times to repeat the wrapped function/method
-    :type times: Int
-    :param Exceptions: Lists of exceptions that trigger a retry attempt
-    :type Exceptions: Tuple of Exceptions
-    """
+def retry(max_retries, wait_time):
     def decorator(func):
-        def newfn(*args, **kwargs):
-            attempt = 0
-            while attempt < times:
-                try:
-                    return func(*args, **kwargs)
-                except exceptions:
-                    print(
-                        'Exception thrown when attempting to run %s, attempt '
-                        '%d of %d' % (func, attempt, times)
-                    )
-                    attempt += 1
-            return func(*args, **kwargs)
-        return newfn
+        def wrapper(*args, **kwargs):
+            retries = 0
+            while True:
+                if retries < max_retries:
+                    try:
+                        result = func(*args, **kwargs)
+                        return result
+                    except Exception as e:
+                        retries += 1
+                        sleep(wait_time)
+                else:
+                    raise Exception(f"Max retries of function {func} exceeded")
+        return wrapper
     return decorator
 
-"""
-@retry(times=3, exceptions=(ValueError, TypeError))
-def foo1():
-    print('Some code here ....')
-    print('Oh no, we have exception')
-    raise ValueError('Some error')
-
-foo1()
-"""
-
-
-"""
-how do i initiate and keep track of experiments/processes?
-https://www.dataquest.io/blog/python-subprocess/
-https://stackoverflow.com/questions/28025402/how-to-kill-subprocesses-when-parent-exits-in-python 
-
-Do i need a pickle for each or is it kept running? probably
-"""
 
 def bad_name(st): 
     for char in st: 
@@ -63,7 +36,7 @@ def key_for_value(my_dict:dict, value):
     return list(my_dict.keys())[list(my_dict.values()).index(value)]
 
 
-
+@retry(max_retries = 4, wait_time=1)
 def valid_sn():
     d = u3.openAllU3()
     sn = list(d.keys())
@@ -75,6 +48,7 @@ def valid_sn():
 def kelvin_to_celcius(k):
     return k-273.15
 
+@retry(max_retries = 4, wait_time = 1)
 def configure_device(serialNumber, DAC_voltages, ports):
     d = u3.U3(firstFound = False, serial = serialNumber)
     #set all flexible IOs to analog input
@@ -87,7 +61,9 @@ def configure_device(serialNumber, DAC_voltages, ports):
     Close()
     return d
 
+@retry(max_retries = 40, wait_time = 0.723)
 def connected_device(serialNumber):
+    print("trying to connect to device")
     return u3.U3(firstFound = False, serial = serialNumber)
 
 def single_measurement(serialNumber, ports:list = [1,2,3,4,5,6,7,8]): 
@@ -103,19 +79,16 @@ def single_measurement(serialNumber, ports:list = [1,2,3,4,5,6,7,8]):
     del d
     return voltages
 """
-@retry(6,(LabJackException))
+@retry(6,(LJE_LABJACK_NOT_FOUND))
 def n_measurements(serialNumber, ports:list = [1,2,3,4,5,6,7,8], n_reps = 3):
     return np.array([single_measurement(serialNumber=serialNumber, ports = ports,) for x in range(n_reps) if sleep(1/n_reps) is None]) 
 
 def average_measurement(array):
     return np.ndarray.tolist(np.mean(array, axis = 0))
 """
-
+@retry(max_retries = 4, wait_time = 1)
 def full_measurement(serialNumber, ports:list, n_reps):
-    try:
-        d = u3.U3(firstFound = False, serial = serialNumber)
-    except Exception as e:
-        print("LabJack connection problem", e)
+    d = u3.U3(firstFound = False, serial = serialNumber)
     #ports are 1-16, but the labjack refers to 0-15
     data = []
     for x in range(n_reps):
@@ -133,7 +106,7 @@ def full_measurement(serialNumber, ports:list, n_reps):
 def stdev_measurement(array = n_measurements):
     return np.std(array, axis = 0)
 """
-
+@retry(max_retries = 4, wait_time = 1)
 def get_temp(serialNumber):
    d = u3.U3(firstFound = False, serial = serialNumber)
    temp = kelvin_to_celcius(d.getTemperature())
