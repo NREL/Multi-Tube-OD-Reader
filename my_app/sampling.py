@@ -3,7 +3,6 @@ import u3
 import statistics
 import pickle
 from time import sleep
-from memory_profiler import profile
 
 
 def retry(max_retries, wait_time):

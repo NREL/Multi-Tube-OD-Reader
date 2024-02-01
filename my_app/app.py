@@ -1,14 +1,11 @@
-import u3
 from LabJackPython import Close
+from shinyswatch import theme
+from shiny import App, Inputs, Outputs, Session, reactive, render, ui, req
+import pickle
 from Configure_hardware import configure_ui, configure_server
 from setup_new_run import setup_ui, setup_server
 from accordion_plots_module import accordion_plot_ui, accordion_plot_server
-import shinyswatch
-from shiny import App, Inputs, Outputs, Session, reactive, render, ui, req
-import pickle
 from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device
-
-
 
 serials = valid_sn()
 hardware = {sn:connected_device(sn).getName() for sn in serials}
@@ -29,7 +26,7 @@ for x in [CURRENT_RUNS_PICKLE, USAGE_STATUS_PICKLE]:
         continue
 
 app_ui = ui.page_navbar(
-    shinyswatch.theme.materia(),
+    theme.materia(),
     ui.nav_panel(
         "Home",
         ui.layout_sidebar( 
