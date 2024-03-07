@@ -1,11 +1,11 @@
-from LabJackPython import Close, LabJackException
+from LabJackPython import Close
 import math
 import argparse
 from time import time, sleep, monotonic
 from datetime import datetime
 from json import loads
 import app as app_main
-from sampling import configure_device, get_temp, full_measurement
+from sampling import configure_device, get_temp, full_measurement, resource_path
 
 t_zero_ref_voltage = None
 t_zero_voltage_list = []
@@ -23,7 +23,8 @@ args = parser.parse_args()
 interval = args.time_interval * 60
 ref = args.ref
 blanks = args.blanks
-file = args.out_file
+file = resource_path( "./" + args.out_file)
+print("file")
 all_ports = args.ports
 test = args.test
 
@@ -66,7 +67,7 @@ def get_measurement_row(test:dict = test, ref_port = ref_port, ref_device = ref_
 
 def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
     v_ref_now = measurements.pop(0)
-    return [math.log10(v_ref_zero/v_ref_now*v_test_now/v_test_zero) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
+    return [math.log10(v_ref_zero/v_ref_now*v_test_zero/v_test_now) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
 
 def save_row(row:list, file = file ):
     row = (str(x) for x in row)

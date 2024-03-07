@@ -2,8 +2,26 @@ from LabJackPython import Close, LJE_LABJACK_NOT_FOUND
 import u3
 import statistics
 import pickle
+import os
+import sys
 from time import sleep
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+'''
+You should use this script in the .py file you're trying to compile with PyInstaller. 
+Don't put this code snippet in the .spec file, that will not work. 
+Access your files by substituting the path you'd normally type by resource_path("file_to_be_accessed.mp3"). 
+Be wary that you should use max' answer for the current version of PyInstaller. 
+'''
 
 def retry(max_retries, wait_time):
     def decorator(func):
@@ -24,6 +42,7 @@ def retry(max_retries, wait_time):
 
 
 def bad_name(st): 
+    '''Returns False if string contains character other than space, underscore or alphanumeric'''
     for char in st: 
         if char.isalnum() or char=='_' or char==' ': 
             continue 
@@ -117,8 +136,8 @@ def add_to_file(file_name, list):
     out_file.write('\t'.join(list) + '\n')
     out_file.close()
 
-CURRENT_RUNS_PICKLE = "Current_runs.pickle"
-USAGE_STATUS_PICKLE ="Usage_status.pickle"
+CURRENT_RUNS_PICKLE = resource_path("./Current_runs.pickle")
+USAGE_STATUS_PICKLE =resource_path("./Usage_status.pickle")
 PORTS_PER_DEVICE = 16
 VALID_SERIAL_NUMBERS = valid_sn()
 

@@ -5,7 +5,7 @@ import pickle
 from Configure_hardware import configure_ui, configure_server
 from setup_new_run import setup_ui, setup_server
 from accordion_plots_module import accordion_plot_ui, accordion_plot_server
-from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device
+from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device, resource_path
 
 serials = valid_sn()
 hardware = {sn:connected_device(sn).getName() for sn in serials}
@@ -19,8 +19,8 @@ def sn_for_name(name):
         if name == hardware_name:
             return sn
 
-CURRENT_RUNS_PICKLE = "Current_runs.pickle"
-USAGE_STATUS_PICKLE ="Usage_status.pickle"
+CURRENT_RUNS_PICKLE = resource_path("./Current_runs.pickle")
+USAGE_STATUS_PICKLE = resource_path("./Usage_status.pickle")
 for x in [CURRENT_RUNS_PICKLE, USAGE_STATUS_PICKLE]:
     with open(x ,'a+') as f:
         continue

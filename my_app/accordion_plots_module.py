@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pandas
 import pickle
 import app
-from sampling import set_usage_status
+from sampling import set_usage_status, resource_path
 import psutil
 import json
 
@@ -22,7 +22,7 @@ def accordion_plot_server(input, output, session, list="list"):
     
     @reactive.calc()
     def file_path():
-        return f"C:/Users/shebdon/Documents/GitHub/MultiTubeOD/{list[11]}"
+        return list[11]
     
     @output
     @render.text()

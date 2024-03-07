@@ -2,7 +2,7 @@ from shiny import module, ui, reactive, render, req, Inputs, Outputs, Session
 from LabJackPython import Close
 from copy import deepcopy
 import pickle
-from sampling import get_new_ports, flatten_list, full_measurement, set_usage_status, configure_device, bad_name
+from sampling import get_new_ports, flatten_list, full_measurement, set_usage_status, configure_device, bad_name, resource_path
 from numeric_module import controlled_numeric_server, controlled_numeric_ui
 import subprocess
 import json
@@ -206,10 +206,11 @@ def setup_server(input, output, session, usage_status_reactive):
     def _():
         name = input.experiment_name()
         # could be neat to refactor this into a list of conditionals that decide whether the list of modals are produced
-        if os.path.exists(name+".tsv") or bad_name(name): 
+        
+        if os.path.exists(resource_path(name+".tsv")) or bad_name(name): 
             file_exists = ui.modal(
                 "Please use a different name.",
-                "You cannot reuse old names or use characters other than letters, numbers, spaces and underscores.",
+                "You cannot reuse old names or special characters.",
                 title="Invalid Name",
                 easy_close=True,
                 footer=None,
@@ -228,11 +229,11 @@ def setup_server(input, output, session, usage_status_reactive):
         
         for device in new_ports_ids().keys():
             try:
-                configure_device(device, DAC_voltages= [5,2.4], ports = [])
+                configure_device(device, DAC_voltages= [2.5,2.5], ports = [])
             except:
                 print("Exception updating in setup new run")
                 sleep(1)
-                configure_device(device, DAC_voltages= [5,2.4], ports = [])
+                configure_device(device, DAC_voltages= [2.5,2.5], ports = [])
                 print("retried configure device")
             Close()
         ui.update_navs("setup_run_navigator", selected="blanks")
@@ -295,13 +296,12 @@ def setup_server(input, output, session, usage_status_reactive):
             name = input.experiment_name()
             safe_name = name.replace(' ', '_')
             t= input.interval()
-            command = ["python", "my_app/new_run.py", "-ref", ref, "-blanks", blanks, "-ports", ports, "-test", test, "-o", f"{safe_name}.tsv", "-t", f"{t}"]
+            path_to_new_run_script = resource_path("new_run.py")
+            command = ["python", path_to_new_run_script, "-ref", ref, "-blanks", blanks, "-ports", ports, "-test", test, "-o", f"{safe_name}.tsv", "-t", f"{t}"]
             pid = subprocess.Popen(command, creationflags = subprocess.CREATE_NO_WINDOW).pid
             for i in range(0, 6):
                 bar.set(i, message = "Starting Run", detail= "Measuring voltages")
                 sleep(0.2)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
-
-            
             # update the pickles 
             for sn, ports in test_ports.items():
                 set_usage_status(sn = sn, ports_list= ports, status = 1)
