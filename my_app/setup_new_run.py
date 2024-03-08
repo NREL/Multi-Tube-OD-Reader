@@ -6,7 +6,7 @@ from sampling import get_new_ports, flatten_list, full_measurement, set_usage_st
 from numeric_module import controlled_numeric_server, controlled_numeric_ui
 import subprocess
 import json
-from time import sleep
+from asyncio import sleep
 import os
 import app as app_main
 
@@ -283,11 +283,11 @@ def setup_server(input, output, session, usage_status_reactive):
     
     @reactive.Effect
     @reactive.event(input.commit_start)
-    def _():
-        global test_ports
-        global blank_readings
-        with ui.Progress(min = 0, max = 10) as bar:
-            bar.set(message = "Starting Run")
+    async def _():
+        with ui.Progress(min = 1, max = 15) as bar:
+            global test_ports
+            global blank_readings
+            bar.set(1, message = "Starting Run")
             # Call the new run 
             ref = input.chosen_ref()
             blanks = json.dumps(blank_readings)  
@@ -299,9 +299,9 @@ def setup_server(input, output, session, usage_status_reactive):
             path_to_new_run_script = resource_path("new_run.py")
             command = ["python", path_to_new_run_script, "-ref", ref, "-blanks", blanks, "-ports", ports, "-test", test, "-o", f"{safe_name}.tsv", "-t", f"{t}"]
             pid = subprocess.Popen(command, creationflags = subprocess.CREATE_NO_WINDOW).pid
-            for i in range(0, 6):
+            for i in range(1, 8):
                 bar.set(i, message = "Starting Run", detail= "Measuring voltages")
-                sleep(0.4)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
+                await sleep(0.2)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
             # update the pickles 
             for sn, ports in test_ports.items():
                 set_usage_status(sn = sn, ports_list= ports, status = 1)
@@ -314,9 +314,9 @@ def setup_server(input, output, session, usage_status_reactive):
             except EOFError:
                 None #This get's thrown if the pickle is empty, empty pickle isn't a problem
             running_experiments[pid]=command
-            for i in range(5, 11):
+            for i in range(7, 16):
                 bar.set(i, message = "Starting Run", detail= "Calculating OD")
-                sleep(0.4)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
+                await sleep(0.2)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
             with open(app_main.CURRENT_RUNS_PICKLE, 'wb') as f:
                 pickle.dump(running_experiments, f, pickle.DEFAULT_PROTOCOL)               
             
