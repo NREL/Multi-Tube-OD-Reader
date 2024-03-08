@@ -136,8 +136,17 @@ def add_to_file(file_name, list):
     out_file.write('\t'.join(list) + '\n')
     out_file.close()
 
-CURRENT_RUNS_PICKLE = resource_path("./Current_runs.pickle")
-USAGE_STATUS_PICKLE =resource_path("./Usage_status.pickle")
+
+
+#check if run as exe or script file, give current directory accordingly
+if getattr(sys, 'frozen', False):
+    application_path = os.path.dirname(sys.executable)
+elif __file__:
+    application_path = os.path.dirname(__file__)
+
+CURRENT_RUNS_PICKLE = os.path.join(application_path, "Current_runs.pickle")
+USAGE_STATUS_PICKLE = os.path.join(application_path, "Usage_status.pickle")
+
 PORTS_PER_DEVICE = 16
 VALID_SERIAL_NUMBERS = valid_sn()
 

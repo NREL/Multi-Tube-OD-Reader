@@ -6,6 +6,8 @@ from Configure_hardware import configure_ui, configure_server
 from setup_new_run import setup_ui, setup_server
 from accordion_plots_module import accordion_plot_ui, accordion_plot_server
 from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device, resource_path
+import os
+import sys
 
 serials = valid_sn()
 hardware = {sn:connected_device(sn).getName() for sn in serials}
@@ -19,8 +21,19 @@ def sn_for_name(name):
         if name == hardware_name:
             return sn
 
-CURRENT_RUNS_PICKLE = resource_path("./Current_runs.pickle")
-USAGE_STATUS_PICKLE = resource_path("./Usage_status.pickle")
+
+#check if run as exe or script file, give current directory accordingly
+if getattr(sys, 'frozen', False):
+    application_path = os.path.dirname(sys.executable)
+elif __file__:
+    application_path = os.path.dirname(__file__)
+
+CURRENT_RUNS_PICKLE = os.path.join(application_path, "Current_runs.pickle")
+USAGE_STATUS_PICKLE = os.path.join(application_path, "Usage_status.pickle")
+
+print("Current Runs", CURRENT_RUNS_PICKLE)
+print("Usage status", USAGE_STATUS_PICKLE)
+
 for x in [CURRENT_RUNS_PICKLE, USAGE_STATUS_PICKLE]:
     with open(x ,'a+') as f:
         continue

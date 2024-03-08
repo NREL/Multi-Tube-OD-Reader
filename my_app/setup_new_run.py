@@ -301,7 +301,7 @@ def setup_server(input, output, session, usage_status_reactive):
             pid = subprocess.Popen(command, creationflags = subprocess.CREATE_NO_WINDOW).pid
             for i in range(0, 6):
                 bar.set(i, message = "Starting Run", detail= "Measuring voltages")
-                sleep(0.2)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
+                sleep(0.4)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
             # update the pickles 
             for sn, ports in test_ports.items():
                 set_usage_status(sn = sn, ports_list= ports, status = 1)
@@ -316,7 +316,7 @@ def setup_server(input, output, session, usage_status_reactive):
             running_experiments[pid]=command
             for i in range(5, 11):
                 bar.set(i, message = "Starting Run", detail= "Calculating OD")
-                sleep(0.2)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
+                sleep(0.4)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
             with open(app_main.CURRENT_RUNS_PICKLE, 'wb') as f:
                 pickle.dump(running_experiments, f, pickle.DEFAULT_PROTOCOL)               
             

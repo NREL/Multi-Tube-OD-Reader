@@ -5,6 +5,8 @@ from time import time, sleep, monotonic
 from datetime import datetime
 from json import loads
 import app as app_main
+import sys
+import os
 from sampling import configure_device, get_temp, full_measurement, resource_path
 
 t_zero_ref_voltage = None
@@ -23,8 +25,14 @@ args = parser.parse_args()
 interval = args.time_interval * 60
 ref = args.ref
 blanks = args.blanks
-file = resource_path( "./" + args.out_file)
-print("file")
+
+"""if getattr(sys, 'frozen', False):
+    application_path = os.path.dirname(sys.executable)
+elif __file__:
+    application_path = os.path.dirname(__file__)
+file = os.path.join(application_path, ("..\\" + args.out_file) )
+"""
+file = resource_path( "..\\" + args.out_file)
 all_ports = args.ports
 test = args.test
 

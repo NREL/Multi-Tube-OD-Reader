@@ -1,3 +1,4 @@
+import sys
 from shiny import module, ui, reactive, render, req, Inputs, Outputs, Session
 import matplotlib.pyplot as plt
 import pandas
@@ -6,6 +7,7 @@ import app
 from sampling import set_usage_status, resource_path
 import psutil
 import json
+import os
 
 @module.ui
 def accordion_plot_ui(value="value"):
@@ -22,9 +24,16 @@ def accordion_plot_server(input, output, session, list="list"):
     
     @reactive.calc()
     def file_path():
-        return list[11]
+        #check if run as exe or script file, give current directory accordingly
+        if getattr(sys, 'frozen', False):
+            application_path = os.path.dirname(sys.executable)
+        elif __file__:
+            application_path = os.path.dirname(__file__)
+        to_return = os.path.join(application_path, ("..\\" + list[11]) )
+        print("path from accordion", to_return)
+        return to_return
     
-    @output
+    @output 
     @render.text()
     def experiment_name():
         return list[11].split(".")[0] #to remove .tsv extension
@@ -72,8 +81,8 @@ def accordion_plot_server(input, output, session, list="list"):
     def _():
         confirm_stop = ui.modal("Are you sure you want to stop this run?",
             title = "Stop Run?",
-            footer= ui.row(ui.column(6,ui.modal_button("Keep Experiment Running")), 
-                        ui.column(6,ui.input_action_button("commit_stop", "End the Experiment"))),
+            footer= ui.row(ui.column(6,ui.modal_button("Keep Running")), 
+                        ui.column(6,ui.input_action_button("commit_stop", "Stop Run"))),
             easy_close= False,
         )
         ui.modal_show(confirm_stop)
