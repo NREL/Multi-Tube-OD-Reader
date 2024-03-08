@@ -56,3 +56,5 @@ shiny_example.py
 *.tsv
 shiny_example.py
 Sampling.py
+*.png
+*.jpg
