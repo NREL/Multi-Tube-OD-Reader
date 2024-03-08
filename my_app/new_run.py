@@ -26,12 +26,6 @@ interval = args.time_interval * 60
 ref = args.ref
 blanks = args.blanks
 
-"""if getattr(sys, 'frozen', False):
-    application_path = os.path.dirname(sys.executable)
-elif __file__:
-    application_path = os.path.dirname(__file__)
-file = os.path.join(application_path, ("..\\" + args.out_file) )
-"""
 file = resource_path( "..\\" + args.out_file)
 all_ports = args.ports
 test = args.test

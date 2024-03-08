@@ -117,13 +117,6 @@ def server(input: Inputs, output: Outputs, session: Session):
     def _():
         ui.update_navs("front_page", selected = "new_experiment")        
 
-    """
-    @reactive.effect
-    @reactive.event(run_started())
-    def _():
-        req(run_started())
-        ui.update_navs("front_page", selected = "home")
-    """
     counter = reactive.Value(0)
 
     @reactive.effect

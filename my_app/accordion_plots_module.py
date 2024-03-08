@@ -73,6 +73,7 @@ def accordion_plot_server(input, output, session, list="list"):
         temperature_df = raw[raw_col[0:2]]
         od_df = raw.loc[:, raw.columns!=raw_col[1]]
         col = od_df.columns
+        
         return plt.plot(od_df[col[0]], od_df[col[1:]],)
 
     @reactive.Effect
