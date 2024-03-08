@@ -30,7 +30,6 @@ def accordion_plot_server(input, output, session, list="list"):
         elif __file__:
             application_path = os.path.dirname(__file__)
         to_return = os.path.join(application_path, ("..\\" + list[11]) )
-        print("path from accordion", to_return)
         return to_return
     
     @output 

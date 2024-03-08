@@ -104,7 +104,13 @@ def server(input: Inputs, output: Outputs, session: Session):
 
     configure_server("config")
 
-    setup_server("setup", watch_usage_pickle)
+    setup_complete = setup_server("setup", watch_usage_pickle)
+
+    @reactive.effect
+    @reactive.event(setup_complete)
+    def _():
+        ui.update_navs("front_page", selected = "home")
+
 
     @reactive.effect
     @reactive.event(input.new_experiment)
