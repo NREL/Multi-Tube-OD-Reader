@@ -69,7 +69,10 @@ def get_measurement_row(test:dict = test, ref_port = ref_port, ref_device = ref_
 
 def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
     v_ref_now = measurements.pop(0)
-    return [math.log10(v_ref_zero/v_ref_now*v_test_zero/v_test_now) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
+    #voltage is proportional to intenisty
+    #abs = -log(I/I0) =log(I0/I)
+    # A-A(ref) = log(I0/I)-log(I0/I)(Ref)
+    return [math.log10(v_test_zero/v_test_now)-math.log10(v_ref_zero/v_ref_now) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
 
 def save_row(row:list, file = file ):
     row = (str(x) for x in row)
