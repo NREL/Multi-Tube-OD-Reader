@@ -20,7 +20,7 @@ def accordion_plot_ui(value="value"):
                     )
 
 @module.server
-def accordion_plot_server(input, output, session, list="list"):
+def accordion_plot_server(input, output, session, command_as_list="list"):
     
     @reactive.calc()
     def file_path():
@@ -29,23 +29,23 @@ def accordion_plot_server(input, output, session, list="list"):
             application_path = os.path.dirname(sys.executable)
         elif __file__:
             application_path = os.path.dirname(__file__)
-        to_return = os.path.join(application_path, ("..\\" + list[11]) )
+        to_return = os.path.join(application_path, ("..\\" + command_as_list[11]) )
         return to_return
     
     @output 
     @render.text()
     def experiment_name():
-        return list[11].split(".")[0] #to remove .tsv extension
+        return command_as_list[11].split(".")[0] #to remove .tsv extension
 
     @reactive.calc
-    def test_ports_usage():
-        usage = json.loads(list[9])
+    def test_ports_used_in_run():
+        usage = json.loads(command_as_list[9])
         return usage
     
     @output
     @render.text
     def ports_text():
-        pretty_ports = [f"{app.name_for_sn(sn)}:{ports}" for sn, ports in test_ports_usage().items()]
+        pretty_ports = [f"{app.name_for_sn(sn)}:{ports}" for sn, ports in test_ports_used_in_run().items()]
         "".join(pretty_ports)
         return pretty_ports
     
@@ -60,7 +60,7 @@ def accordion_plot_server(input, output, session, list="list"):
         
     @reactive.calc
     def ref_device_port():
-        device, port = list[3].split(":") 
+        device, port = command_as_list[3].split(":") 
         port = [int(port)]
         device = app.sn_for_name(device)
         return device, port
@@ -90,26 +90,41 @@ def accordion_plot_server(input, output, session, list="list"):
     @reactive.Effect
     @reactive.event(input.commit_stop)
     def _():
+        #read-only load the pickle of running experiments
         running_pickle = {}
         with open(app.CURRENT_RUNS_PICKLE, 'rb') as f:
             running_pickle = pickle.load(f)
-        pid = [i for i in running_pickle if running_pickle[i] == list][0]
+
+        #get PID of matching command, returnes first item in list of length 1
+        pid = [i for i in running_pickle if running_pickle[i] == command_as_list][0]
+        
+        #remove PID from running experiments
         running_pickle.pop(pid, None)
+        
+        #stop the process
         try:
             p = psutil.Process(pid)
             p.terminate()
         except:
             print("Cant find the PID, it must have already stopped")
         ui.notification_show(f"{experiment_name()} ended.")    
+        
+        #write-only mode current runs pickle
         with open(app.CURRENT_RUNS_PICKLE, 'wb') as f:
             pickle.dump(running_pickle, f, pickle.DEFAULT_PROTOCOL)
-        for sn, ports in test_ports_usage().items():
+        
+        #mark non-ref tubes as available for use
+        for sn, ports in test_ports_used_in_run().items():
             set_usage_status(sn=sn, ports_list= ports, status = 0)
+        
+        #do any of the running experiments in the pickle use the given ref port [3] in the command list.
         ref_not_used = True
         for experiment in running_pickle.values():
-            if list[3] == experiment[3]:
+            if command_as_list[3] == experiment[3]:
                 ref_not_used = False
-                break
+                break #one match is enough, stop the loop
+
+        #set port as available if not used elsewhere. 
         if ref_not_used:
             set_usage_status(sn = ref_device_port()[0], ports_list=ref_device_port()[1], status = 0)
         ui.modal_remove()
