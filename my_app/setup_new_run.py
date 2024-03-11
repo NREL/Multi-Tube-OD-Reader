@@ -18,7 +18,7 @@ def setup_ui():
     return ui.page_fluid(
         ui.layout_sidebar(
             ui.sidebar(
-                ui.output_text("ports_blanked_output_text"),
+                #ui.output_text("ports_blanked_output_text"),
                 ui.markdown(
                     """
                     **Blank tube**: 
@@ -324,10 +324,12 @@ def setup_server(input, output, session, usage_status_reactive):
             reset_button()
 
     ####################### Outputs ####################
+    """ 
     @output
     @render.text
     def ports_blanked_output_text():
         return ports_blanked()
+    """
 
     @output
     @render.ui
