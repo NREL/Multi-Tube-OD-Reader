@@ -5,7 +5,7 @@ import pickle
 from Configure_hardware import configure_ui, configure_server
 from setup_new_run import setup_ui, setup_server
 from accordion_plots_module import accordion_plot_ui, accordion_plot_server
-from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device, resource_path
+from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device, resource_path, retry
 import os
 import sys
 
@@ -67,7 +67,7 @@ app_ui = ui.page_navbar(
     )
 
 def server(input: Inputs, output: Outputs, session: Session):
-    
+    """
     @reactive.Effect
     def _():
         global hardware
@@ -78,7 +78,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 easy_close= False
             )
             ui.modal_show(no_labjack_connection)
-
+    """
     @reactive.Effect
     @reactive.event(input.close_app)
     async def _():
@@ -140,7 +140,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     @render.text
     def running_pickles():
         req(watch_runs_pickle())
-        return [f"{pid}:{list[11]}" for pid,list in watch_runs_pickle().items()]
+        return [f"{pid}:{list[11]}:{list[3]}" for pid,list in watch_runs_pickle().items()]
 
     @output
     @render.text
