@@ -5,13 +5,13 @@ from time import time, sleep, monotonic
 from datetime import datetime
 from json import loads
 import app as app_main
+import pickle
 import sys
-import os
 from sampling import configure_device, get_temp, full_measurement, resource_path
 
 t_zero_ref_voltage = None
 t_zero_voltage_list = []
-parser = argparse.ArgumentParser(description="Collect samples from U3 LabJack instrument, infinit loop.", 
+parser = argparse.ArgumentParser(description="Collect samples from U3 LabJack instrument, infinite loop.", 
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument('-ref', type = str, default= 'Big Red:1', help = 'str(name:port) for choses reference port')
@@ -29,6 +29,15 @@ blanks = args.blanks
 file = resource_path( "..\\" + args.out_file)
 all_ports = args.ports
 test = args.test
+
+command_as_list = ["python", resource_path("new_run.py"), 
+                   "-ref", ref, 
+                   "-blanks", blanks, 
+                    "-ports", all_ports, 
+                    "-test", test, 
+                    "-o", args.out_file, 
+                    "-t", args.time_interval]
+
 
 
 ref_device_name, ref_port = ref.split(":")
@@ -92,13 +101,27 @@ with open(file, "a+") as f:
 t_zero_ref_voltage = t_zero_voltage_list.pop(0)
 starttime = monotonic()
 
-
 def per_iteration():
+    #get and save data to new row.
     new_row, temp, timepoint = get_measurement_row()
     new_OD = voltage_to_OD(v_ref_zero = t_zero_ref_voltage, time_zero_voltages=t_zero_voltage_list, measurements=new_row)
     new_OD.insert(0, temp)
     new_OD.insert(0, (timepoint - starttime)/60)
     save_row(new_OD)
+
+    #self terminate if pickle not found (keeps runs from continuing after resetting software)
+    try:
+        with open(app_main.CURRENT_RUNS_PICKLE, 'rb') as f:
+            running_experiments = pickle.load(f)
+    except:
+        sys.exit()
+
+    #self terminate if run not found in pickle
+    running_names = [row[11] for row in running_experiments.values()]
+    if command_as_list[11] not in running_names:
+        sys.exit()
+
+    #wait remainder of interval until next read
     sleep(interval - (monotonic()-starttime) % interval)
 
 while True:
