@@ -128,7 +128,7 @@ def server(input: Inputs, output: Outputs, session: Session):
             experiment_name = list[11].split(".")[0]
             server_list.append(accordion_plot_server(f"{experiment_name}_{counter()}", list))
             ui_list.append(accordion_plot_ui(f"{experiment_name}_{counter()}", experiment_name))
-        counter.set(counter() +1) #creates new names for modules. reusing old names leads to problems.
+        counter.set(counter() +1) #creates new names for modules. reusing old names causes problems.
         @output
         @render.ui
         def running_experiments():

@@ -73,7 +73,6 @@ def accordion_plot_server(input, output, session, command_as_list="list"):
         temperature_df = raw[raw_col[0:2]]
         od_df = raw.loc[:, raw.columns!=raw_col[1]]
         col = od_df.columns
-        
         return plt.plot(od_df[col[0]], od_df[col[1:]],)
 
     @reactive.Effect
@@ -109,11 +108,11 @@ def accordion_plot_server(input, output, session, command_as_list="list"):
             print("Cant find the PID, it must have already stopped")
         ui.notification_show(f"{experiment_name()} ended.")    
         
-        #write-only mode current runs pickle
+        #write updated current runs to pickle
         with open(app.CURRENT_RUNS_PICKLE, 'wb') as f:
             pickle.dump(running_pickle, f, pickle.DEFAULT_PROTOCOL)
         
-        #mark non-ref tubes as available for use
+        #mark non-ref tubes from closed run as available for use
         for sn, ports in test_ports_used_in_run().items():
             set_usage_status(sn=sn, ports_list= ports, status = 0)
         
