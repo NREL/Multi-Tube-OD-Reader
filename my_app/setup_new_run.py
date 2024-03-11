@@ -18,6 +18,7 @@ def setup_ui():
     return ui.page_fluid(
         ui.layout_sidebar(
             ui.sidebar(
+                ui.output_text("ports_blanked_output_text"),
                 ui.markdown(
                     """
                     **Blank tube**: 
@@ -182,6 +183,7 @@ def setup_server(input, output, session, usage_status_reactive):
         blank_readings = {}
         ui.update_text("experiment_name", label = "Experiment Name", placeholder= "--Enter Name Here--", value = "")
         ui.update_navs("setup_run_navigator", selected="setup")
+        ui.update_checkbox("universal_ref_checkbox", value=False)
 
     @reactive.calc
     def sort_blank_readings():
@@ -265,9 +267,10 @@ def setup_server(input, output, session, usage_status_reactive):
         local_blanks = deepcopy(ports_blanked())
         device, port = chosen_ref_device_port()
         #read blank for reference port
-        blank_readings[device].append(full_measurement(device, ports=[port], n_reps= 9)[0])
-        local_blanks[device].append(port)
-        ports_blanked.set(local_blanks)
+        if port not in local_blanks[device]:
+            blank_readings[device].append(full_measurement(device, ports=[port], n_reps= 9)[0])
+            local_blanks[device].append(port)
+            ports_blanked.set(local_blanks)
         sort_blank_readings()
         ui.update_navs("setup_run_navigator", selected = "start")
 
@@ -288,7 +291,6 @@ def setup_server(input, output, session, usage_status_reactive):
             global test_ports
             global blank_readings
             bar.set(1, message = "Starting Run")
-            # Call the new run 
             ref = input.chosen_ref()
             blanks = json.dumps(blank_readings)  
             ports = json.dumps(ports_blanked())  
@@ -319,9 +321,13 @@ def setup_server(input, output, session, usage_status_reactive):
                 await sleep(0.2)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
             with open(app_main.CURRENT_RUNS_PICKLE, 'wb') as f:
                 pickle.dump(running_experiments, f, pickle.DEFAULT_PROTOCOL)               
-            
-            #Still need to figure out how to go back to Home, but reset_button() is a good start.
             reset_button()
+
+    ####################### Outputs ####################
+    @output
+    @render.text
+    def ports_blanked_output_text():
+        return ports_blanked()
 
     @output
     @render.ui
