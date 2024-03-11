@@ -36,7 +36,7 @@ def retry(max_retries, wait_time):
                         retries += 1
                         sleep(wait_time)
                 else:
-                    raise Exception(f"Max retries of function {func} exceeded")
+                    raise Exception(f"Max retries of function {func()} exceeded")
         return wrapper
     return decorator
 
@@ -54,7 +54,7 @@ def key_for_value(my_dict:dict, value):
     return list(my_dict.keys())[list(my_dict.values()).index(value)]
 
 
-@retry(max_retries = 4, wait_time=1)
+@retry(max_retries = 10, wait_time=0.379)
 def valid_sn():
     d = u3.openAllU3()
     sn = list(d.keys())
