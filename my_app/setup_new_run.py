@@ -15,6 +15,68 @@ from pathlib import Path
 blank_readings = "hello"
 test_ports = {}
 
+def new_panel(title, heading, subheading, ui_elements, cancel_label, commit_label):
+    return ui.nav_panel(None,
+        ui.h2({"style": "text-align: center;"}, heading),
+        ui.div(
+            subheading,
+            *ui_elements,
+            ui.row(
+                ui.column(6, 
+                    ui.input_action_button(f"cancel_{title}", cancel_label, style ="float:right")
+                ),
+                ui.column(6, 
+                    ui.input_action_button(f"commit_{title}", commit_label, style ="float:left")
+                ),
+            ),
+            align = "center",
+        ),
+        value = title
+    )
+
+tab_titles = ["setup", 
+              "blanks", 
+              "reference", 
+              "start",
+              ]
+
+tab_headings = ["Setup a New Run",
+                "Prepare the Device",
+                "Choose the Reference Tube",
+                "Start the Run",
+                ]
+
+tab_subheadings = ["Set Experimental Parameters",
+                ui.output_text("device_to_blank_text"),
+                "Select a 'Device:Port' pair to blank for reference:",
+                "Place growth tubes in the following ports:",
+                ]
+
+tab_cancel_labels = [None,
+                 "Cancel",
+                 "Cancel",
+                 "Cancel",
+                 ]
+
+tab_commit_labels = ["Next",
+                 "Read Selected Blanks",
+                 "Next", 
+                 "Start Run",
+                 ]
+
+tab_ui_elements = [[ui.input_text("experiment_name", "Experiment Name", placeholder = "--Enter Name Here--", value = None),
+                        controlled_numeric_ui("ports_available"), 
+                        ui.input_numeric("interval", "Timepoint interval (min)", value = 10),
+                        ui.output_ui("universal_ref_checkbox"),
+                        ],
+                    [ui.output_ui("choice_of_ports_to_blank"),
+                        ],
+                    [ui.output_ui("choose_ref_port"),
+                        ],
+                    [ui.output_text_verbatim("ports_used_text",),
+                        ],
+                    ]
+
 @module.ui
 def setup_ui():
     return ui.page_fluid(
@@ -46,78 +108,15 @@ def setup_ui():
                 ),
             ),
             ui.navset_hidden(
-                ui.nav_panel(None,
-                    ui.h2({"style": "text-align: center;"}, "Setup A New Run"),
-                    ui.div(
-                        "Set Experimental Parameters",
-                        ui.input_text("experiment_name", "Experiment Name", placeholder = "--Enter Name Here--", value = None),
-                        controlled_numeric_ui("ports_available"), 
-                        ui.input_numeric("interval", "Timepoint interval (min)", value = 10),
-                        ui.output_ui("universal_ref_checkbox"),
-                        ui.row(
-                            ui.column(6,
-                            ),
-                            ui.column(6,
-                                ui.input_action_button("commit_setup", "Next"),
-                            ),
-                        ),
-                        style = "align:center",
-                    ),
-                    value="setup"
-                ),
-                #put style center here
-                ui.nav_panel(None, #this will be replaced by a ui.TagList of ui's, one for each device maybe
-                    ui.h2({"style": "text-align: center;"}, "Prepare the Device"),
-                    ui.div({"style": "text-align: center;"},
-                        ui.h4({"style": "text-align: center;"}, ui.output_text("device_to_blank_text")),
-                        ui.output_ui("choice_of_ports_to_blank"),
-                        ui.row(
-                            ui.column(6,
-                                ui.input_action_button("cancel_blanks", "Cancel", width = '200px'),
-                                style = "float:right",
-                            ),
-                            ui.column(6,
-                                ui.input_action_button("commit_blanks", "Read Selected Blanks", width = '200px'),
-                            ),
-                        ),
-                    ),
-                    value="blanks"
-                ),
-                ui.nav_panel(None,
-                    ui.h2({"style": "text-align: center;"}, "Choose the Reference Tube"),
-                    ui.div({"style": "text-align: center;"},
-                           "Select a 'Device:Port' pair to use for reference:",
-                        ui.output_ui("choose_ref_port"),
-                        ui.row(
-                            ui.column(6,
-                                ui.input_action_button("cancel_reference", "Cancel", width = '200px'),
-                                style = "float:right",
-                            ),
-                            ui.column(6,
-                                ui.input_action_button("commit_reference", "Next", width = '200px'),
-                            ),
-                        ),
-                    ),
-                    value="reference"
-                ),
-                ui.nav_panel(None,
-                    ui.h2({"style": "text-align: center;"}, "Start The Run"),
-                    ui.div({"style": "text-align: center;"},
-                        "Place growth tubes in the following ports:",
-                        ui.output_text_verbatim("ports_used_text",),
-                        ui.row(
-                            ui.column(6,
-                                ui.input_action_button("cancel_start", "Cancel", width = '200px'),
-                                style = "float:right",
-                            ),
-                            ui.column(6,
-                                ui.input_action_button("commit_start", "Start Run", width = '200px'),
-                            ),
-                        ),
-                    ),
-                    value="start"
-                ),
-                id = "setup_run_navigator",
+                *[new_panel(a, b, c, d, e, f) for a, b, c, d, e, f in 
+                 zip(tab_titles, 
+                     tab_headings, 
+                     tab_subheadings, 
+                     tab_ui_elements, 
+                     tab_cancel_labels, 
+                     tab_commit_labels,
+                     )],
+                selected= "setup",
             ),                  
         ),
     ),

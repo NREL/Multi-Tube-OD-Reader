@@ -68,7 +68,7 @@ def accordion_plot_server(input, output, session, command_as_list="list"):
         fig, ax = plt.subplots()
         ax.set_xlabel("Time (min)")
         ax.set_ylabel("Optical Density")
-        ax.set_title(f"{str.replace(experiment_name(), "_", " ")}")
+        ax.set_title(f"{str.replace(experiment_name(), '_', ' ')}")
         for i, col_name in enumerate(col):
             if i >= 1:
                 x = od_df[col[0]]

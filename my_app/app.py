@@ -31,8 +31,6 @@ elif __file__:
 CURRENT_RUNS_PICKLE = os.path.join(application_path, "Current_runs.pickle")
 USAGE_STATUS_PICKLE = os.path.join(application_path, "Usage_status.pickle")
 
-print("Current Runs", CURRENT_RUNS_PICKLE)
-print("Usage status", USAGE_STATUS_PICKLE)
 
 for x in [CURRENT_RUNS_PICKLE, USAGE_STATUS_PICKLE]:
     with open(x ,'a+') as f:
