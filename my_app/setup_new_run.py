@@ -15,74 +15,77 @@ from pathlib import Path
 blank_readings = "hello"
 test_ports = {}
 
-def new_panel(title, heading, subheading, ui_elements, cancel_label, commit_label):
-    return ui.nav_panel(None,
-        ui.h2({"style": "text-align: center;"}, heading),
-        ui.div(
-            subheading,
-            *ui_elements,
-            ui.row(
-                ui.column(6, 
-                    ui.input_action_button(f"cancel_{title}", cancel_label, style ="float:right")
-                ),
-                ui.column(6, 
-                    ui.input_action_button(f"commit_{title}", commit_label, style ="float:left")
-                ),
-            ),
-            align = "center",
-        ),
-        value = title
-    )
 
-tab_titles = ["setup", 
-              "blanks", 
-              "reference", 
-              "start",
-              ]
 
-tab_headings = ["Setup a New Run",
-                "Prepare the Device",
-                "Choose the Reference Tube",
-                "Start the Run",
-                ]
-
-tab_subheadings = ["Set Experimental Parameters",
-                ui.output_text("device_to_blank_text"),
-                "Select a 'Device:Port' pair to blank for reference:",
-                "Place growth tubes in the following ports:",
-                ]
-
-tab_cancel_labels = [None,
-                 "Cancel",
-                 "Cancel",
-                 "Cancel",
-                 ]
-
-tab_commit_labels = ["Next",
-                 "Read Selected Blanks",
-                 "Next", 
-                 "Start Run",
-                 ]
-
-tab_ui_elements = [[ui.input_text("experiment_name", "Experiment Name", placeholder = "--Enter Name Here--", value = None),
-                        controlled_numeric_ui("ports_available"), 
-                        ui.input_numeric("interval", "Timepoint interval (min)", value = 10),
-                        ui.output_ui("universal_ref_checkbox"),
-                        ],
-                    [ui.output_ui("choice_of_ports_to_blank"),
-                        ],
-                    [ui.output_ui("choose_ref_port"),
-                        ],
-                    [ui.output_text_verbatim("ports_used_text",),
-                        ],
-                    ]
 
 @module.ui
 def setup_ui():
+    def new_panel(title, heading, subheading, ui_elements, cancel_label, commit_label):
+        return ui.nav_panel(None,
+            ui.h2({"style": "text-align: center;"}, heading),
+            ui.div(
+                subheading,
+                *ui_elements,
+                ui.row(
+                    ui.column(6, 
+                        ui.input_action_button("cancel_" + title, cancel_label, width = '175px', style ="float:right"),
+                    ),
+                    ui.column(6, 
+                        ui.input_action_button("commit_" + title, commit_label, width = '175px', style ="float:left"),
+                    ),
+                ),
+                align = "center",
+            ),
+            value = title
+        )
+
+    tab_titles = ["setup", 
+                "blanks", 
+                "reference", 
+                "start",
+                ]
+
+    tab_headings = ["Setup a New Run",
+                    "Prepare the Device",
+                    "Choose the Reference Tube",
+                    "Start the Run",
+                    ]
+    tab_subheadings = ["Set Experimental Parameters",
+                    ui.output_text("device_to_blank_text"),
+                    "Select a 'Device:Port' pair to blank for reference:",
+                    "Place growth tubes in the following ports:",
+                    ]
+
+    tab_cancel_labels = ["Cancel",
+                    "Cancel",
+                    "Cancel",
+                    "Cancel",
+                    ]
+
+    tab_commit_labels = ["Next",
+                    "Read Selected Blanks",
+                    "Next", 
+                    "Start Run",
+                    ]
+
+    tab_ui_elements = [[ui.input_text("experiment_name", "Experiment Name", placeholder = "--Enter Name Here--", value = None),
+                            controlled_numeric_ui("ports_available"), 
+                            #ui.input_numeric("ports_available", value = 3, min = 1, max = 16, label = "Number of Growth Tubes to Use:"),
+                            ui.input_numeric("interval", "Timepoint interval (min)", value = 10),
+                            ui.output_ui("universal_ref_checkbox"),
+                            ],
+                        [ui.output_ui("choice_of_ports_to_blank"),
+                            ],
+                        [ui.output_ui("choose_ref_port"),
+                            ],
+                        [ui.output_text_verbatim("ports_used_text"),
+                            ],
+                        ]
+
     return ui.page_fluid(
         ui.layout_sidebar(
             ui.sidebar(
-                #ui.output_text("ports_blanked_output_text"),
+                ui.output_text("trouble_shooting_output"),
                 ui.markdown(
                     """
                     **Blank tube**: 
@@ -117,6 +120,7 @@ def setup_ui():
                      tab_commit_labels,
                      )],
                 selected= "setup",
+                id = "setup_run_navigator",
             ),                  
         ),
     ),
@@ -206,7 +210,7 @@ def setup_server(input, output, session, usage_status_reactive):
     #################   Navigation         ############################
     @reactive.Effect
     @reactive.event(input.commit_setup)
-    def _():
+    async def _():
         name = input.experiment_name()
         # could be neat to refactor this into a list of conditionals that decide whether the list of modals are produced
         
@@ -235,7 +239,7 @@ def setup_server(input, output, session, usage_status_reactive):
                 configure_device(device, DAC_voltages= [2.5,2.5], ports = [])
             except:
                 print("Exception updating in setup new run")
-                sleep(1)
+                await sleep(1)
                 configure_device(device, DAC_voltages= [2.5,2.5], ports = [])
                 print("retried configure device")
             Close()
@@ -336,12 +340,12 @@ def setup_server(input, output, session, usage_status_reactive):
             reset_button()
 
     ####################### Outputs ####################
-    """ 
+
     @output
     @render.text
-    def ports_blanked_output_text():
-        return ports_blanked()
-    """
+    def trouble_shooting_output():
+        return input.commit_setup()
+
 
     @output
     @render.ui
