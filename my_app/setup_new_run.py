@@ -129,6 +129,8 @@ def setup_ui():
 def setup_server(input, output, session, usage_status_reactive):
     
     ports_blanked = reactive.Value({})
+
+    return_home = reactive.Value(0)
     
     @reactive.calc
     def unused_ports():
@@ -208,6 +210,13 @@ def setup_server(input, output, session, usage_status_reactive):
         return device, port
 
     #################   Navigation         ############################
+    @reactive.Effect
+    @reactive.event(input.cancel_setup)
+    def _():
+        reset_button()
+        return_home.set(return_home() + 1)
+
+
     @reactive.Effect
     @reactive.event(input.commit_setup)
     async def _():
@@ -338,6 +347,7 @@ def setup_server(input, output, session, usage_status_reactive):
             with open(app_main.CURRENT_RUNS_PICKLE, 'wb') as f:
                 pickle.dump(running_experiments, f, pickle.DEFAULT_PROTOCOL)               
             reset_button()
+            return_home.set(return_home() + 1)
 
     ####################### Outputs ####################
 
@@ -397,4 +407,4 @@ def setup_server(input, output, session, usage_status_reactive):
         except: None
         return ui.input_radio_buttons("chosen_ref", label= "Make sure the Reference Tube is in place before proceeding.", choices=choices, selected = None)
            
-    return input.commit_start
+    return return_home
