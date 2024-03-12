@@ -73,7 +73,18 @@ def accordion_plot_server(input, output, session, command_as_list="list"):
         temperature_df = raw[raw_col[0:2]]
         od_df = raw.loc[:, raw.columns!=raw_col[1]]
         col = od_df.columns
-        return plt.plot(od_df[col[0]], od_df[col[1:]],)
+        fig, ax = plt.subplots()
+        ax.set_xlabel("Time (min)")
+        ax.set_ylabel("Optical Density")
+        ax.set_title(f"{str.replace(experiment_name(), "_", " ")}")
+        for i, col_name in enumerate(col):
+            if i >= 1:
+                x = od_df[col[0]]
+                y = od_df[col[i]]
+                ax.scatter(x, y)
+                ax.text(x.iloc[-1], y.iloc[-1], col_name)
+
+        return fig
 
     @reactive.Effect
     @reactive.event(input.stop_run)
