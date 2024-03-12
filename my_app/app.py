@@ -100,9 +100,11 @@ def server(input: Inputs, output: Outputs, session: Session):
         except:
             make_usage_status_pickle()
 
+    #configure hardware
     configure_server("config")
 
-    setup_complete = setup_server("setup", watch_usage_pickle)
+    #setup new run
+    setup_complete = setup_server("setup", watch_usage_pickle) 
 
     @reactive.effect
     @reactive.event(setup_complete)
