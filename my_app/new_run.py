@@ -81,8 +81,9 @@ def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
     #voltage is proportional to intenisty
     #abs = -log(I/I0) =log(I0/I)
     # A-A(ref) = log(I0/I)-log(I0/I)(Ref)
-    return [math.log10(v_test_zero/v_test_now)-math.log10(v_ref_zero/v_ref_now) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
-
+    #log(A) - log(B) = log(A/B)
+    return [math.log10((v_test_zero/v_test_now)/(v_ref_zero/v_ref_now)) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
+    
 def save_row(row:list, file = file ):
     row = (str(x) for x in row)
     with open(file, "a") as f:

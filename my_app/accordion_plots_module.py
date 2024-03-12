@@ -13,7 +13,6 @@ import os
 def accordion_plot_ui(value="value"):
     return ui.accordion_panel(
                         ui.output_text("experiment_name"),
-                        ui.output_text("ports_text"), 
                         ui.output_plot("experimental_plot"),
                         ui.input_action_button("stop_run", "Stop Run"),
                     value= value
@@ -41,14 +40,7 @@ def accordion_plot_server(input, output, session, command_as_list="list"):
     def test_ports_used_in_run():
         usage = json.loads(command_as_list[9])
         return usage
-    
-    @output
-    @render.text
-    def ports_text():
-        pretty_ports = [f"{app.name_for_sn(sn)}:{ports}" for sn, ports in test_ports_used_in_run().items()]
-        "".join(pretty_ports)
-        return pretty_ports
-    
+       
     @reactive.file_reader(file_path(), interval_secs=10)
     def data():
         try:
@@ -82,7 +74,8 @@ def accordion_plot_server(input, output, session, command_as_list="list"):
                 x = od_df[col[0]]
                 y = od_df[col[i]]
                 ax.scatter(x, y)
-                ax.text(x.iloc[-1], y.iloc[-1], col_name)
+                if len(x) >= 2: #otherwise plot shows error until second timepoint.
+                    ax.text(x.iloc[-1], y.iloc[-1], col_name)
 
         return fig
 
