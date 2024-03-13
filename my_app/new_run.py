@@ -1,5 +1,6 @@
 from LabJackPython import Close
 import math
+import os
 import argparse
 from time import time, sleep, monotonic
 from datetime import datetime
@@ -8,6 +9,8 @@ import app as app_main
 import pickle
 import sys
 from sampling import configure_device, get_temp, full_measurement, resource_path
+
+CURRENT_RUNS_PICKLE = resource_path("Current_runs.pickle")
 
 t_zero_ref_voltage = None
 t_zero_voltage_list = []
@@ -112,14 +115,16 @@ def per_iteration():
 
     #self terminate if pickle not found (keeps runs from continuing after resetting software)
     try:
-        with open(app_main.CURRENT_RUNS_PICKLE, 'rb') as f:
+        with open(CURRENT_RUNS_PICKLE, 'rb') as f:
             running_experiments = pickle.load(f)
     except:
+        save_row(["#self terminating because pickle files were deleted"])
         sys.exit()
 
     #self terminate if run not found in pickle
     running_names = [row[11] for row in running_experiments.values()]
     if command_as_list[11] not in running_names:
+        save_row(["#Self terminating because run was removed from the pickle file."])
         sys.exit()
 
     #wait remainder of interval until next read

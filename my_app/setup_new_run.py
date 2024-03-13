@@ -327,7 +327,7 @@ def setup_server(input, output, session, usage_status_reactive):
             bar.set(1, message = "Starting Run")
             for i in range(1, 8):
                 bar.set(i, message = "Starting Run", detail= "Measuring voltages")
-                await sleep(0.1)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
+                await sleep(0.2)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
             
             #update the pickles 
             for sn, ports in test_ports.items():
@@ -343,7 +343,7 @@ def setup_server(input, output, session, usage_status_reactive):
             running_experiments[pid]=command
             for i in range(7, 16):
                 bar.set(i, message = "Starting Run", detail= "Calculating OD")
-                await sleep(0.1)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
+                await sleep(0.2)  #startup samples take 2 seconds. If we update pickle too soon, the accordion_server crashes for no file.
             with open(app_main.CURRENT_RUNS_PICKLE, 'wb') as f:
                 pickle.dump(running_experiments, f, pickle.DEFAULT_PROTOCOL)               
             reset_button()

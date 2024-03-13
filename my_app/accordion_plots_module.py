@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas
 import pickle
 import app
-from sampling import set_usage_status, resource_path
+from sampling import set_usage_status, resource_path, retry
 import psutil
 import json
 import os
@@ -43,12 +43,7 @@ def accordion_plot_server(input, output, session, command_as_list="list"):
        
     @reactive.file_reader(file_path(), interval_secs=10)
     def data():
-        try:
-            return pandas.read_csv(file_path(), delimiter="\t",header=4, comment="#")
-        except:
-            print("can't open file")
-            return
-
+        return pandas.read_csv(file_path(), delimiter="\t",header=4, comment="#")
         
     @reactive.calc
     def ref_device_port():
