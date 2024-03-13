@@ -58,3 +58,7 @@ shiny_example.py
 Sampling.py
 *.png
 *.jpg
+*.spec
+/my_app/__pycache__
+/my_app/build
+Parallel OD reader.docx
