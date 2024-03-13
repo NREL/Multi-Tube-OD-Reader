@@ -263,6 +263,7 @@ def setup_server(input, output, session, usage_status_reactive):
     @reactive.effect
     @reactive.event(input.commit_blanks)
     def _():
+        req(input.choice_of_ports_to_blank())
         global blank_readings
         local_blanks = deepcopy(ports_blanked())
         measure_blanks = full_measurement(current_device_or_ports()[0], ports=input.choice_of_ports_to_blank(), n_reps= 9)
