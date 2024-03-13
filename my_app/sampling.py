@@ -1,10 +1,11 @@
 from LabJackPython import Close, LJE_LABJACK_NOT_FOUND
+from time import sleep
 import u3
 import statistics
 import pickle
 import os
 import sys
-from time import sleep
+
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -35,8 +36,9 @@ def retry(max_retries, wait_time):
                     except Exception as e:
                         retries += 1
                         sleep(wait_time)
+                        print(f"Exception given: {e}")
                 else:
-                    raise Exception(f"Max retries of function {func()} exceeded")
+                    raise Exception(f"Max retries of function {func} exceeded. ")
         return wrapper
     return decorator
 
@@ -70,14 +72,13 @@ def kelvin_to_celcius(k):
 def configure_device(serialNumber, DAC_voltages, ports):
     d = u3.U3(firstFound = False, serial = serialNumber)
     #set all flexible IOs to analog input
-    fio = sum([2**x for x in ports if x <= 7])
-    eio = sum([2**x for x in ports if x >= 8])
-    d.configU3(FIOAnalog = fio, EIOAnalog= eio)
+    fio = sum([2**(x-1) for x in ports if x <= 8])
+    eio = sum([2**(x-9) for x in ports if x >= 9])
+    d.configIO(FIOAnalog = fio, EIOAnalog= eio)
     if DAC_voltages:
         for x,v in enumerate(DAC_voltages):
             d.getFeedback(u3.DAC8(Dac = x, Value = d.voltageToDACBits(v, x )))
     Close()
-    return d
 
 @retry(max_retries = 40, wait_time = 0.723)
 def connected_device(serialNumber):
@@ -107,6 +108,10 @@ def average_measurement(array):
 def full_measurement(serialNumber, ports:list, n_reps):
     d = u3.U3(firstFound = False, serial = serialNumber)
     #ports are 1-16, but the labjack refers to 0-15
+    ports = [int(x) for x in ports]
+    fio = sum([2**(x-1) for x in ports if x <= 8])
+    eio = sum([2**(x-9) for x in ports if x >= 9])
+    d.configIO(FIOAnalog = fio, EIOAnalog= eio)
     data = []
     for x in range(n_reps):
         if sleep(1/n_reps) is None:   
@@ -117,7 +122,6 @@ def full_measurement(serialNumber, ports:list, n_reps):
     for i,first_list in enumerate(data[0]):
         out.append(statistics.mean(list[i] for list in data))
     return out
-    
 
 """
 def stdev_measurement(array = n_measurements):
