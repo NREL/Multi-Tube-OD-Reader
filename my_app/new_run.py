@@ -1,9 +1,8 @@
 from LabJackPython import Close
 import math
-import os
-import argparse
 from time import time, sleep, monotonic
 from datetime import datetime
+import argparse
 from json import loads
 import app as app_main
 import pickle
@@ -89,7 +88,7 @@ def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
     
 def save_row(row:list, file = file ):
     row = (str(x) for x in row)
-    with open(file, "a") as f:
+    with open(file, "a+") as f:
         f.write("\t".join(row))
         f.write("\n")
 
@@ -135,3 +134,4 @@ while True:
         per_iteration()
     except Exception as e:
         save_row([f"#{e}"])
+        sleep(2)

@@ -5,13 +5,12 @@ import pickle
 from Configure_hardware import configure_ui, configure_server
 from setup_new_run import setup_ui, setup_server
 from accordion_plots_module import accordion_plot_ui, accordion_plot_server
-from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device, resource_path, retry
+from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device
 import os
 import sys
 
 serials = valid_sn()
 hardware = {sn:connected_device(sn).getName() for sn in serials}
-Close()
 
 def name_for_sn(sn):
     return hardware[sn]
@@ -20,7 +19,7 @@ def sn_for_name(name):
     for sn, hardware_name in hardware.items():
         if name == hardware_name:
             return sn
-
+Close()
 
 #check if run as exe or script file, give current directory accordingly
 if getattr(sys, 'frozen', False):
@@ -57,7 +56,7 @@ app_ui = ui.page_navbar(
         value = "new_experiment"
     ),
     ui.nav_panel(
-        "Configure Hardware",
+        "Identify Hardware",
         configure_ui("config"),
     ),
     ui.nav_panel(
@@ -159,8 +158,8 @@ def server(input: Inputs, output: Outputs, session: Session):
             ui.markdown(
                 """
                 ### What usually goes wrong:
-                Trying to take two readings simultaneously (mulitple, high frequency runs)\n
-                All OD readings of zero (if this happens please let me know)\n
+                If there's not option for "Number fo Growth Tubes" for your new run, the device is either disconnected or busy taking meaurements. Retry later\n
+                Trying to take two readings simultaneously (mulitple, high frequency runs) can crash the software.\n
 
                 ### Steps to Try: 
                 ##### Restart the app
