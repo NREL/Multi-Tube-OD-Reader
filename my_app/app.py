@@ -60,6 +60,11 @@ app_ui = ui.page_navbar(
         "Configure Hardware",
         configure_ui("config"),
     ),
+    ui.nav_panel(
+        "When things go wrong",
+        ui.output_ui("gone_wrong"),
+
+    ),
     title="MultiTubeOD",
     id = "front_page" 
     )
@@ -146,5 +151,36 @@ def server(input: Inputs, output: Outputs, session: Session):
     @render.text
     def status_pickle():
         return watch_usage_pickle()
+    
+    @output
+    @render.ui
+    def gone_wrong():
+        return ui.page_fluid(
+            ui.markdown(
+                """
+                ### What usually goes wrong:
+                Trying to take two readings simultaneously (mulitple, high frequency runs)\n
+                All OD readings of zero (if this happens please let me know)\n
+
+                ### Steps to Try: 
+                ##### Restart the app
+                This won't stop current runs.\n
+                
+                ##### Disconnect and reconnect the device(s).
+                This may stop current runs.\n
+                
+                ##### Delete the two ".pickle" files.
+                - Current_runs.pickle
+                - Usage_status.pickle\n
+                They are in the same folder as the app, near where the output files are stored.\n
+                This will stop current runs at the next time point.
+                                  
+                ### Contact:
+                Let me know if things go wrong or what features you'd like to be added.\n
+                shebdon@nrel.gov
+
+                """
+            ),
+        )
 
 app = App(app_ui, server)
