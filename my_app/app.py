@@ -6,8 +6,13 @@ from Configure_hardware import configure_ui, configure_server
 from setup_new_run import setup_ui, setup_server
 from accordion_plots_module import accordion_plot_ui, accordion_plot_server
 from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device
+from growth_curve_analysis import analysis_ui, analysis_server
 import os
 import sys
+import logging
+
+#need to get used to logging so I don't have to write/delete print statements
+#can move this into a reactive context to respond to a "connect to new hardware" button in the sidebar. 
 
 serials = valid_sn()
 hardware = {sn:connected_device(sn).getName() for sn in serials}
@@ -54,6 +59,10 @@ app_ui = ui.page_navbar(
         #hidden_tabs_ui("test"),
         setup_ui("setup"),
         value = "new_experiment"
+    ),
+    ui.nav_panel(
+        "Analysis",
+        analysis_ui("analysis"),
     ),
     ui.nav_panel(
         "Identify Hardware",
@@ -110,11 +119,17 @@ def server(input: Inputs, output: Outputs, session: Session):
     #setup new run
     setup_complete = setup_server("setup", watch_usage_pickle) 
 
+    analysis_complete = analysis_server("analysis")
+    
     @reactive.effect
     @reactive.event(setup_complete)
     def _():
         ui.update_navs("front_page", selected = "home")
 
+    @reactive.effect
+    @reactive.event(analysis_complete)
+    def _():
+        ui.update_navs("front_page", selected = "home")
 
     @reactive.effect
     @reactive.event(input.new_experiment)
@@ -158,26 +173,24 @@ def server(input: Inputs, output: Outputs, session: Session):
             ui.markdown(
                 """
                 ### What usually goes wrong:
-                If there's not option for "Number fo Growth Tubes" for your new run, the device is either disconnected or busy taking meaurements. Retry later\n
+                If there's no input option for "Number of Growth Tubes" for your new run, the device is either disconnected or busy taking meaurements. Reconnect or retry later\n
                 Trying to take two readings simultaneously (mulitple, high frequency runs) can crash the software.\n
+                Sometimes the supporting files (with the .pickle extension) get corrupted if runs crash.\n
 
                 ### Steps to Try: 
                 ##### Restart the app
                 This won't stop current runs.\n
                 
-                ##### Disconnect and reconnect the device(s).
-                This may stop current runs.\n
-                
                 ##### Delete the two ".pickle" files.
+                This will stop current runs at the next time point. The files are in the same folder as the app, in a folder where the output files are stored.\n
                 - Current_runs.pickle
-                - Usage_status.pickle\n
-                They are in the same folder as the app, near where the output files are stored.\n
-                This will stop current runs at the next time point.
+                - Usage_status.pickle
                                   
                 ### Contact:
-                Let me know if things go wrong or what features you'd like to be added.\n
+                Did something go wrong?\n
+                Is there a feature you want added?\n
+                Let me know!\n
                 shebdon@nrel.gov
-
                 """
             ),
         )
