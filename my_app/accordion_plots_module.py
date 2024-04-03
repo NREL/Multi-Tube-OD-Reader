@@ -1,10 +1,9 @@
 import sys
 from shiny import module, ui, reactive, render, req, Inputs, Outputs, Session
-import matplotlib.pyplot as plt
 import pandas
 import pickle
 import app
-from sampling import set_usage_status, resource_path, retry
+from sampling import set_usage_status, make_plot
 import psutil
 import json
 import os
@@ -56,23 +55,7 @@ def accordion_plot_server(input, output, session, command_as_list="list"):
     @render.plot
     def experimental_plot():
         raw = data()
-        raw_col = raw.columns
-        temperature_df = raw[raw_col[0:2]]
-        od_df = raw.loc[:, raw.columns!=raw_col[1]]
-        col = od_df.columns
-        fig, ax = plt.subplots()
-        ax.set_xlabel("Time (min)")
-        ax.set_ylabel("Optical Density")
-        ax.set_title(f"{str.replace(experiment_name(), '_', ' ')}")
-        for i, col_name in enumerate(col):
-            if i >= 1:
-                x = od_df[col[0]]
-                y = od_df[col[i]]
-                ax.scatter(x, y)
-                if len(x) >= 2: #otherwise plot shows error until second timepoint.
-                    ax.text(x.iloc[-1], y.iloc[-1], col_name)
-
-        return fig
+        return make_plot(raw.drop(columns = "Temperature") )
 
     @reactive.Effect
     @reactive.event(input.stop_run)

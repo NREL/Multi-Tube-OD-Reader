@@ -5,7 +5,10 @@ import statistics
 import pickle
 import os
 import sys
+import logging
+import matplotlib.pyplot as plt
 
+logging.getLogger().setLevel(logging.INFO)
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
@@ -112,10 +115,16 @@ def full_measurement(serialNumber, ports:list, n_reps):
     fio = sum([2**(x-1) for x in ports if x <= 8])
     eio = sum([2**(x-9) for x in ports if x >= 9])
     d.configIO(FIOAnalog = fio, EIOAnalog= eio)
+    DAC_voltages = [5, 2.8]
+    for x,v in enumerate(DAC_voltages):
+        d.getFeedback(u3.DAC8(Dac = x, Value = d.voltageToDACBits(v, x )))
     data = []
     for x in range(n_reps):
         if sleep(1/n_reps) is None:   
             data.append(d.binaryListToCalibratedAnalogVoltages(d.getFeedback([u3.AIN(PositiveChannel=int(x)-1, NegativeChannel=31, LongSettling=True, QuickSample=False) for x in ports]), isLowVoltage= True, isSingleEnded= True, isSpecialSetting= False ))
+    DAC_voltages = [0, 0]
+    for x,v in enumerate(DAC_voltages):
+        d.getFeedback(u3.DAC8(Dac = x, Value = d.voltageToDACBits(v, x )))
     Close()
     del d
     out = []
@@ -200,7 +209,7 @@ def set_usage_status(file = USAGE_STATUS_PICKLE, sn= '320106158', ports_list = [
             for port in ports_list:
                 usage_status[sn][int(port)-1] = status 
         else:
-            raise KeyError("set_usage_status tried updating an invalid device serial number")
+            print("set_usage_status tried updating an invalid device serial number\n Consider resetting the pickle files when the devices aren't in use.")
     with open(file, "wb") as f:
         pickle.dump(usage_status, f, pickle.DEFAULT_PROTOCOL)
     return usage_status
@@ -227,5 +236,22 @@ def get_new_ports(n_ports = 5):
         if n_ports == 0:                                                        #stop if we have enough
             break
     return new_ports
+
+
+def make_plot(od_df):
+    import pandas
+    col = od_df.columns
+    fig, ax = plt.subplots()
+    ax.set_xlabel("Time (min)")
+    ax.set_ylabel("Optical Density")
+    for i, col_name in enumerate(col):
+        if i >= 1:
+            x = od_df[col[0]]
+            y = od_df[col[i]]
+            ax.plot(x, y)
+            if len(x) >= 2: #otherwise plot shows error until second timepoint.
+                ax.text(x.iloc[-1], y.iloc[-1], col_name)
+    return fig
+    
 
 
