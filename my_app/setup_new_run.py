@@ -245,11 +245,11 @@ def setup_server(input, output, session, usage_status_reactive):
         
         for device in new_ports_ids().keys():
             try:
-                configure_device(device, DAC_voltages= [2.5,2.5], ports = [])
+                configure_device(device, DAC_voltages= [5,2.7], ports = [])
             except:
                 print("Exception updating in setup new run")
                 await sleep(1)
-                configure_device(device, DAC_voltages= [2.5,2.5], ports = [])
+                configure_device(device, DAC_voltages= [5,2.7], ports = [])
                 print("retried configure device")
             Close()
         ui.update_navs("setup_run_navigator", selected="blanks")
@@ -399,7 +399,9 @@ def setup_server(input, output, session, usage_status_reactive):
         for device, ports in ports_blanked().items():
             for x in ports:
                 choices.append(f"{app_main.name_for_sn(device)}:{x}") 
-        try: #input.universal_reference() may not be defined. I don't know how to deal with  potentially non-existant variables except to try them
+        try: 
+            #input.universal_reference() may not be defined, causing problems in this if
+            #probably better ways to handle this.
             if input.universal_reference() is not None and input.universal_reference() == True: 
                 choices = []
                 for device, ports in reference_ports()[0].items():
