@@ -62,3 +62,7 @@ Sampling.py
 /my_app/__pycache__
 /my_app/build
 Parallel OD reader.docx
+/my_app/dist
+*.exe
+*.exe
+*.exe
