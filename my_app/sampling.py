@@ -7,6 +7,8 @@ import os
 import sys
 import logging
 import matplotlib.pyplot as plt
+import numpy
+import pandas
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -238,20 +240,36 @@ def get_new_ports(n_ports = 5):
     return new_ports
 
 
-def make_plot(od_df):
-    import pandas
-    col = od_df.columns
+def melted_df_to_plot(df, x_column = "Time (min)"):
+    #https://matplotlib.org/stable/users/explain/quick_start.html#sphx-glr-users-explain-quick-start-py
+    #input long DF. 
+    #If df made with unique names, mean = original data, std = NA (not plotted)
+    #If unique names replaced with group names, mean = group mean, std = std
+    summary = df.groupby([x_column, "variable"], as_index=False)["value"].agg({'mean', 'std'}) 
+    group_names = list(summary["variable"].drop_duplicates())
     fig, ax = plt.subplots()
-    ax.set_xlabel("Time (min)")
-    ax.set_ylabel("Optical Density")
-    for i, col_name in enumerate(col):
-        if i >= 1:
-            x = od_df[col[0]]
-            y = od_df[col[i]]
-            ax.plot(x, y)
-            if len(x) >= 2: #otherwise plot shows error until second timepoint.
-                ax.text(x.iloc[-1], y.iloc[-1], col_name)
+    ax.set_ylabel('Optical Density')
+    ax.set_xlabel('Time (min)')
+    for group in group_names:
+        #Plot the mean +/- std of each timepoint
+        group_data = summary.loc[summary["variable"] == group]
+        x_data = group_data[x_column] 
+        y_data = group_data["mean"]
+        ymin = group_data["mean"] - group_data["std"]
+        ymax = group_data["mean"] + group_data["std"]
+        ax.plot(x_data, y_data, label = group)
+        ax.fill_between(x_data, ymin, ymax, alpha = 0.2)
+    plt.legend()
     return fig
-    
 
 
+def growth_rates(df, x_column = "Time (min)"):
+    """
+    df is wide format 
+    x:string is name of column for values for x axis
+    """
+    skip_columns = [x_column]
+    apply_columns = df.columns.difference(skip_columns)
+    df[apply_columns] = df[apply_columns].apply( numpy.log )
+    rates = df.apply(lambda vals: numpy.polyfit(df[x_column], vals, 1), result_type='expand')
+    return rates
