@@ -127,7 +127,6 @@ class Device:
             if not port.users:
                 port.usage = 0
 
-
     class Port:
         def __init__(self) -> None:
             self.users = []
@@ -169,9 +168,9 @@ class Timecourse:
                                 self.reference_blank = reading
                                 device.set_port_usage(ports[i], self.name, 2)
                             else: 
-                                print('in objectify my app, the port is neither a test nor a reference port')
+                                logger.warning('in objectify my app, the port is neither a test nor a reference port')
             
-        def terminate(self):
+        def reset(self):
             pass
                         
                 

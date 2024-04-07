@@ -37,5 +37,9 @@ class TestDeviceObject(unittest.TestCase):
     def test_device_timecourse_interactions(self):
         pass
     
+    def test_timecourse(self):
+        pass
+
+    
 if __name__ == "__main__":
     unittest.main()
