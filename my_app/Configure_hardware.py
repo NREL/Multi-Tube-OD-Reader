@@ -12,7 +12,7 @@ def configure_ui():
             ui.column(
                 6,
                 ui.div(
-                    ui.output_ui("Select_device"),
+                    ui.output_ui("select_device"),
                     ui.tooltip(
                         ui.input_action_button("blink", "Blink", width = '200px'),
                         "Light up an LED on the device.",
@@ -42,7 +42,7 @@ def configure_server(input, output, session):
     
     @output
     @render.ui
-    def Select_device():
+    def select_device():
         choices = [app_main.name_for_sn(sn) for sn in valid_sn()]
         return ui.input_select("device", "Select a Device to interact with", choices=choices)
 

@@ -8,18 +8,7 @@ from accordion_plots_module import accordion_plot_ui, accordion_plot_server
 from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device
 import os
 import sys
-
-serials = valid_sn()
-hardware = {sn:connected_device(sn).getName() for sn in serials}
-
-def name_for_sn(sn):
-    return hardware[sn]
-
-def sn_for_name(name):
-    for sn, hardware_name in hardware.items():
-        if name == hardware_name:
-            return sn
-Close()
+from objectify_my_app import load_pickle, save_pickle, search_for_new_hardware
 
 #check if run as exe or script file, give current directory accordingly
 if getattr(sys, 'frozen', False):
@@ -27,13 +16,7 @@ if getattr(sys, 'frozen', False):
 elif __file__:
     application_path = os.path.dirname(__file__)
 
-CURRENT_RUNS_PICKLE = os.path.join(application_path, "Current_runs.pickle")
-USAGE_STATUS_PICKLE = os.path.join(application_path, "Usage_status.pickle")
-
-
-for x in [CURRENT_RUNS_PICKLE, USAGE_STATUS_PICKLE]:
-    with open(x ,'a+') as f:
-        continue
+CONFIG_PATH = os.path.join(application_path, "config.dat")
 
 app_ui = ui.page_navbar(
     theme.materia(),
@@ -66,72 +49,42 @@ app_ui = ui.page_navbar(
     ),
     title="MultiTubeOD",
     id = "front_page" 
-    )
+)
 
 def server(input: Inputs, output: Outputs, session: Session):
-    """
-    @reactive.Effect
-    def _():
-        global hardware
-        if hardware == {}:
-            no_labjack_connection = ui.modal("Please connect a device and restart the program.",
-                title = "No Devices Detected",
-                footer = ui.input_action_button("close_app", "Exit App"),
-                easy_close= False
-            )
-            ui.modal_show(no_labjack_connection)
-    """
-    @reactive.Effect
-    @reactive.event(input.close_app)
-    async def _():
-        await session.close()
-        #how to close the terminal when the browser closes?
-       
 
-    @reactive.file_reader(CURRENT_RUNS_PICKLE, priority=-1)
-    def watch_runs_pickle():
+    @reactive.file_reader(CONFIG_PATH, priority=-1)
+    def CONFIG():
         try:
-            with open(CURRENT_RUNS_PICKLE, 'rb') as f:
-                return pickle.load(f)
+            return load_pickle()
         except:
-            make_current_runs_pickle()
+            save_pickle([search_for_new_hardware(),[]]) #pickle is list[list[devices], list[timecourses]]
+
+    @reactive.calc
+    def DEVICES():
+        return CONFIG()[0]
     
-    @reactive.file_reader(USAGE_STATUS_PICKLE)
-    def watch_usage_pickle():
-        try:
-            with open(USAGE_STATUS_PICKLE, 'rb') as f:
-                return pickle.load(f)
-        except:
-            make_usage_status_pickle()
-
+    @reactive.calc
+    def CURRENT_RUNS():
+        return CONFIG()[1]
+    
+    
     #configure hardware
     configure_server("config")
 
     #setup new run
-    setup_complete = setup_server("setup", watch_usage_pickle) 
-
-    @reactive.effect
-    @reactive.event(setup_complete)
-    def _():
-        ui.update_navs("front_page", selected = "home")
-
-
-    @reactive.effect
-    @reactive.event(input.new_experiment)
-    def _():
-        ui.update_navs("front_page", selected = "new_experiment")        
+    setup_complete = setup_server("setup", DEVICES, CURRENT_RUNS)        
 
     counter = reactive.Value(0)
 
     @reactive.effect
-    @reactive.event(watch_runs_pickle) 
+    @reactive.event(CURRENT_RUNS) 
     def _():
         server_list =[]
         ui_list = []
-        for list in watch_runs_pickle().values():
-            experiment_name = list[11].split(".")[0]
-            server_list.append(accordion_plot_server(f"{experiment_name}_{counter()}", list))
-            ui_list.append(accordion_plot_ui(f"{experiment_name}_{counter()}", experiment_name))
+        for timecourse in CURRENT_RUNS().values():
+            server_list.append(accordion_plot_server(f"{timecourse.name}_{counter()}", list))
+            ui_list.append(accordion_plot_ui(f"{timecourse.name}_{counter()}", timecourse.name))
         counter.set(counter() +1) #creates new names for modules. reusing old names causes problems.
         @output
         @render.ui
@@ -139,17 +92,11 @@ def server(input: Inputs, output: Outputs, session: Session):
             return ui.accordion(*ui_list, id= "experiments_accordion",multiple=False)
         return server_list
 
-
     @output
     @render.text
     def running_pickles():
-        req(watch_runs_pickle())
-        return [f"{pid}:{list[11]}:{list[3]}" for pid,list in watch_runs_pickle().items()]
-
-    @output
-    @render.text
-    def status_pickle():
-        return watch_usage_pickle()
+        req(CURRENT_RUNS())
+        return [vars(x) for x in CURRENT_RUNS()]
     
     @output
     @render.ui
@@ -181,5 +128,24 @@ def server(input: Inputs, output: Outputs, session: Session):
                 """
             ),
         )
+    
+
+    ####################### Navigation #######################################
+
+    @reactive.effect
+    @reactive.event(setup_complete)
+    def _():
+        ui.update_navs("front_page", selected = "home")
+
+    @reactive.effect
+    @reactive.event(input.new_experiment)
+    def _():
+        ui.update_navs("front_page", selected = "new_experiment") 
+
+    @reactive.Effect
+    @reactive.event(input.close_app)
+    async def _():
+        await session.close()
+        #how to close the terminal when the browser closes?
 
 app = App(app_ui, server)
