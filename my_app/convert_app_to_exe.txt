@@ -1,5 +1,5 @@
 cd "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/"
-pyinstaller --noconfirm --onefile --console --name "Multitube_OD_0.1.6" `
+pyinstaller --noconfirm --onefile --console --name "Multitube_OD_0.1.7" `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/accordion_plots_module.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/app.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/Configure_hardware.py;." `
