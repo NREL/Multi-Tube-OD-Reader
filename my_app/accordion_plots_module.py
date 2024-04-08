@@ -3,7 +3,7 @@ from shiny import module, ui, reactive, render, req, Inputs, Outputs, Session
 import pandas
 import pickle
 import app
-from sampling import set_usage_status, make_plot
+from sampling import set_usage_status, melted_df_to_plot
 import psutil
 import json
 import os
@@ -55,7 +55,7 @@ def accordion_plot_server(input, output, session, command_as_list="list"):
     @render.plot
     def experimental_plot():
         raw = data()
-        return make_plot(raw.drop(columns = "Temperature") )
+        return melted_df_to_plot(raw.drop(columns = "Temperature") )
 
     @reactive.Effect
     @reactive.event(input.stop_run)
