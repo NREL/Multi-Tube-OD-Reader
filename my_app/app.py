@@ -14,6 +14,7 @@ import logging
 #need to get used to logging so I don't have to write/delete print statements
 #can move this into a reactive context to respond to a "connect to new hardware" button in the sidebar. 
 
+#move this into the server function
 serials = valid_sn()
 hardware = {sn:connected_device(sn).getName() for sn in serials}
 
@@ -89,13 +90,13 @@ def server(input: Inputs, output: Outputs, session: Session):
                 easy_close= False
             )
             ui.modal_show(no_labjack_connection)
-    """
+
     @reactive.Effect
     @reactive.event(input.close_app)
     async def _():
         await session.close()
         #how to close the terminal when the browser closes?
-       
+    """       
 
     @reactive.file_reader(CURRENT_RUNS_PICKLE, priority=-1)
     def watch_runs_pickle():
