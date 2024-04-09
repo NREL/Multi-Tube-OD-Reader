@@ -61,3 +61,4 @@ Sampling.py
 /my_app/__pycache__
 /my_app/build
 Parallel OD reader.docx
+*.dat

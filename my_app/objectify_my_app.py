@@ -7,18 +7,6 @@ from sampling import full_measurement
 
 logger = logging.getLogger(__name__)
 
-#save all into one pickle, maybe have a different line for each item?
-# see https://stackoverflow.com/questions/20716812/saving-and-loading-multiple-objects-in-pickle-file
-# will the first line be a list of device objects (with it's usage), and next line be list of experiment objects
-# create a reconciler to compare usage vs experiments
-# check if PID is running or not.
-
-#build header and blanks directly to file, delete file upon cancel
-#have child process only add to file, not deal with header.
-#import class into child process 
-
-#
-
 def load_pickle(path):
     if os.path.isfile(path):
         with open(path, 'rb') as f:
@@ -28,11 +16,8 @@ def load_pickle(path):
         logger.warning("pickle file not found at %s", path)
 
 def save_pickle(path, object):
-    if os.path.isfile(path):
-        with open(path, 'wb') as f:
-            pickle.dump(object, f, pickle.DEFAULT_PROTOCOL)
-    else: 
-        logger.warning("can't save to pickle file at %s", path)
+    with open(path, 'wb') as f:
+        pickle.dump(object, f, pickle.DEFAULT_PROTOCOL)
 
 def search_for_new_hardware():
     d = u3.openAllU3()
@@ -65,20 +50,25 @@ def count_available_ports(devices:list):
     return sum( d.count_available_ports() for d in devices )
 
 
-# Rethink this section. Pass the actual object instead of 
 def ref_ports_in_use(devices:list):
     """
     takes list of device objects
     returns list of tuples of (device object, position)
     """
-    return [(d, i) for d in devices for i in d.report_ref_ports()]
+    result = []
+    for d in devices:
+        result = result + [tuple((d, i)) for i in d.report_ref_ports()]
+    return result
 
 def available_test_ports(devices:list):
     """
     takes list of device objects
     returns list of tuples of (device object, position)
     """
-    return [(d, i) for d in devices for i in d.report_available_ports()]
+    result = []
+    for d in devices:
+        result = result + [tuple((d, i)) for i in d.report_available_ports()]
+    return result
 
 def tuples_to_choices(list_of_tuples:list):
     return {(d, i):f"{d.name}:{i}" for d, i in list_of_tuples}
@@ -90,8 +80,6 @@ def regroup_tuples(tuples:list):
         nested_list.append([y for x, y in tuples if x is value])
     return zip(set1, nested_list)
 
-
-#Maybe have port classes internal to device and timecourse classes.
 class Device:
     """
     Ports in a device are Port objects. 
@@ -120,7 +108,7 @@ class Device:
         """
         return [i+1 for i, x in enumerate(self.port_usage) if x.usage == 2]
     
-    def stop_experiment(self, experiment_name):
+    def remove_user(self, experiment_name):
         for port in self.port_usage:
             if experiment_name in port.users:
                 port.users.remove(experiment_name)
@@ -132,9 +120,7 @@ class Device:
             self.users = []
             self.usage = 0
 
-
-
-    
+   
 class Timecourse:
     """
     A port in a timecourse is a tuple of (device, position), unless otherwise indicated
@@ -143,38 +129,36 @@ class Timecourse:
     def __init__(self, name:str, interval:int, ref_port:tuple, test_ports:list) -> None:
         self.name = name
         self.interval = interval
-        self.reference_port = ref_port
+        self.reference_port = tuple(ref_port)
         self.reference_blank = None
-        self.test_ports = regroup_tuples( test_ports)
+        self.test_ports = test_ports
         self.test_blanks = [None for x in test_ports]
 
-        def blanks_needed(self):
-            for_tests = [port for port, blank in zip(self.test_ports, self.test_blanks) if blank is None]
-            for_ref = []
-            if self.reference_blank is None: 
-                for_ref = list(self.reference_port)
-            return for_tests + for_ref
-        
-        def measure_blanks(self, ports_tuples:list):
-            for device, ports in regroup_tuples(ports_tuples):
-                for readings in full_measurement(device.sn, ports, 9):
-                    for i, reading in enumerate(readings):
-                        try:
-                            position = self.test_ports.index( (device, ports[i]) )
-                            self.test_blanks[position] = reading
-                            device.set_port_usage(ports[i], self.name, 1)
-                        except IndexError:
-                            if (device, ports[i]) == self.reference_port:
-                                self.reference_blank = reading
-                                device.set_port_usage(ports[i], self.name, 2)
-                            else: 
-                                logger.warning('in objectify my app, the port is neither a test nor a reference port')
-            
-        def reset(self):
-            pass
-                        
-                
+    def blanks_needed(self):
+        for_tests = [port for port, blank in zip(self.test_ports, self.test_blanks) if blank is None]
+        for_ref = []
+        if self.reference_blank is None: 
+            for_ref = [self.reference_port]
+        return for_tests + for_ref
     
+    def get_measurements(self, device, positions, n_reps):
+        #keep this separate so it can be mocked during testing
+        return full_measurement(device.sn, positions, n_reps)
 
-
-        
+    def measure_blanks(self, ports_tuples:list):
+        for device, positions in regroup_tuples(ports_tuples):
+            readings = self.get_measurements(device, positions, 9)
+            for position, reading in zip(positions, readings):
+                port_tuple = tuple((device, position))
+                if port_tuple in self.test_ports:
+                    self.test_blanks[self.test_ports.index(port_tuple)] = reading
+                    device.set_usage([position], self.name, 1)
+                elif port_tuple == self.reference_port:
+                    self.reference_blank = reading
+                    device.set_usage([position], self.name, 2)
+                else:
+                    logging.warning("The blanked port is neither a reference or test port")
+                    
+    def stop_experiment(self):
+        for device, ports in regroup_tuples(self.test_ports + [self.reference_port]):
+            device.remove_user("self.name")

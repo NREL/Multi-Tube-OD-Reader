@@ -117,30 +117,30 @@ def setup_ui():
 @module.server
 def setup_server(input, output, session, devices):
     
-    DEVICES = devices
-
     CURRENT_RUN = None
+    
+    return_home = reactive.Value(0)
 
     @reactive.calc
     def max_ports():
-        return count_available_ports(DEVICES())
+        return count_available_ports(devices())
     
     n_ports_requested = controlled_numeric_server("ports_available", my_label = "Number of Growth Tubes", my_min = 1, my_max = max_ports)
 
     @output
     @render.ui
     def ref_types():
-        if ref_ports_in_use():
+        if ref_ports_in_use(devices()):
             options = {1: "New", 0:"Existing"}
         else:
             options = {1:"New"}
-        return ui.input_radio_buttons("universal_ref", "Create New or Use Existing Reference Tube?", options)
+        return ui.input_radio_buttons("universal_ref", "Create New or Use Existing Reference Tube?", options, selected= 1)
 
     @output
     @render.ui
     def ref_port_options():
         if input.universal_ref():
-            ports = available_test_ports(DEVICES())
+            ports = available_test_ports(devices())
         else:
             ports = ref_ports_in_use()
         choices = tuples_to_choices(ports) 
@@ -183,7 +183,7 @@ def setup_server(input, output, session, devices):
         
         CURRENT_RUN = Timecourse(input.experiment_name(), input.interval(), 
                                  input.chosen_ref(),
-                                 available_test_ports(DEVICES())[n_ports_requested + 1])
+                                 available_test_ports(devices())[:n_ports_requested()])
 
         ui.update_navs("setup_run_navigator", selected="blanks")
 
@@ -191,6 +191,20 @@ def setup_server(input, output, session, devices):
     @reactive.event(input.commit_blanks)
     def _():
         if CURRENT_RUN.blanks_needed():
-            CURRENT_RUN.read_blanks(input.chosen_blanks, DEVICES())
+            req(input.chosen_blanks())
+            CURRENT_RUN.read_blanks(input.chosen_blanks, devices())
         else:
             ui.update_navs("setup_run_navigator", selected = "start")
+
+    @reactive.Effect
+    @reactive.event(input.cancel_setup)
+    def _():
+        reset_button()
+        return_home.set(return_home() + 1)
+
+    def reset_button():
+        CURRENT_RUN.stop_experiment()
+        ui.update_text("experiment_name", label = "Experiment Name", placeholder= "--Enter Name Here--", value = "")
+        ui.update_navs("setup_run_navigator", selected="setup")
+
+    return return_home

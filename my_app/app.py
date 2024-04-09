@@ -1,9 +1,8 @@
 from LabJackPython import Close
 from shinyswatch import theme
 from shiny import App, Inputs, Outputs, Session, reactive, render, ui, req
-import pickle
 from Configure_hardware import configure_ui, configure_server
-from setup_new_run import setup_ui, setup_server
+from reconfiguring_setup_new_run import setup_ui, setup_server
 from accordion_plots_module import accordion_plot_ui, accordion_plot_server
 from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device
 import os
@@ -18,6 +17,12 @@ elif __file__:
 
 CONFIG_PATH = os.path.join(application_path, "config.dat")
 
+if os.path.isfile(CONFIG_PATH):
+    pass
+else:
+    hardware = search_for_new_hardware()
+    save_pickle(CONFIG_PATH, [hardware,[]])
+
 app_ui = ui.page_navbar(
     theme.materia(),
     ui.nav_panel(
@@ -25,6 +30,7 @@ app_ui = ui.page_navbar(
         ui.layout_sidebar( 
             ui.sidebar(
                 ui.input_action_button("new_experiment", "New Experiment", width = '200px'),
+                ui.input_action_button("close_app", "Close App", width = '200px'),
                 ui.output_text("running_pickles"),
                 ui.output_text("status_pickle"),                
             ),
@@ -55,10 +61,7 @@ def server(input: Inputs, output: Outputs, session: Session):
 
     @reactive.file_reader(CONFIG_PATH, priority=-1)
     def CONFIG():
-        try:
-            return load_pickle()
-        except:
-            save_pickle([search_for_new_hardware(),[]]) #pickle is list[list[devices], list[timecourses]]
+        return load_pickle(CONFIG_PATH)
 
     @reactive.calc
     def DEVICES():
@@ -68,12 +71,11 @@ def server(input: Inputs, output: Outputs, session: Session):
     def CURRENT_RUNS():
         return CONFIG()[1]
     
-    
     #configure hardware
     configure_server("config")
 
     #setup new run
-    setup_complete = setup_server("setup", DEVICES, CURRENT_RUNS)        
+    setup_complete = setup_server("setup", DEVICES)        
 
     counter = reactive.Value(0)
 
@@ -82,7 +84,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     def _():
         server_list =[]
         ui_list = []
-        for timecourse in CURRENT_RUNS().values():
+        for timecourse in CURRENT_RUNS():
             server_list.append(accordion_plot_server(f"{timecourse.name}_{counter()}", list))
             ui_list.append(accordion_plot_ui(f"{timecourse.name}_{counter()}", timecourse.name))
         counter.set(counter() +1) #creates new names for modules. reusing old names causes problems.

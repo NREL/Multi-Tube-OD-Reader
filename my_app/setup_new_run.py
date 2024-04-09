@@ -111,7 +111,7 @@ def setup_ui():
                 ),
             ),
             ui.navset_hidden(
-                *[new_panel(a, b, c, d, e, f) for a, b, c, d, e, f in 
+                *[new_panel(*params) for params in 
                  zip(tab_titles, 
                      tab_headings, 
                      tab_subheadings, 
