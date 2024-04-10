@@ -16,11 +16,11 @@ class Device():
         self.sn = sn
         self.ports = [Port(self, x) for x in range(1,17)]
     
-    @staticmethod 
+    @staticmethod
     def discovery(cls):
         """
         call with Device.discovery() to create Device objects for each OD reader
-        
+        staticmethods are accessible with class.method() instead of instance.method for object methods
         """
         d = u3.openAllU3()
         device_sns= list(d.keys())
