@@ -7,7 +7,7 @@ from accordion_plots_module import accordion_plot_ui, accordion_plot_server
 from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device
 import os
 import sys
-from objectify_my_app import load_pickle, save_pickle, search_for_new_hardware
+from my_app.Device import load_pickle, save_pickle, search_for_new_hardware
 
 #check if run as exe or script file, give current directory accordingly
 if getattr(sys, 'frozen', False):

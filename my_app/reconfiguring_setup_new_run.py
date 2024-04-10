@@ -10,7 +10,7 @@ from asyncio import sleep
 import os
 import app as app_main
 from pathlib import Path
-from objectify_my_app import count_available_ports, ref_ports_in_use, available_test_ports, Timecourse, tuples_to_choices
+from my_app.Device import count_available_ports, ref_ports_in_use, available_test_ports, Timecourse, tuples_to_choices
 
 @module.ui
 def setup_ui():

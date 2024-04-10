@@ -1,4 +1,4 @@
-from objectify_my_app import Device, Timecourse, available_test_ports
+from my_app.Device import Device, Timecourse, available_test_ports
 
 
 def test_add_remove_report_ports_to_device():
