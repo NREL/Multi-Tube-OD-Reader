@@ -1,58 +1,60 @@
-from my_app.Device import Device, Timecourse, available_test_ports
+from Device import Device
+from Timecourse import Timecourse
+from Port import Port
 
 
-def test_add_remove_report_ports_to_device():
-    device = Device("Jason", 1323401, 1)
+
+def test_device_and_port_init():
+    """
+    if the devices is created outside of this function, it is duplicated
+    this leaves 2 devices in Device.all_devices and 32 ports in Port.all_ports
+    watch out for this. It may be just this script or in the app too.
+    """
+    d = Device("Jason", 1323401)
+    d.ports[11].usage = 1
+    d.ports[11].users.append("test")
+    n = 8
+    assert d.ports[n].position == n+1
+    assert type(d.ports[0]) == Port
+    assert d.ports[6].device is d
+    assert d.ports[6].device.ports[2].device is d #that's cool!
+    assert type(Port.all_ports) is list
+    assert d.ports[n] in Port.all_ports
+    assert d.ports[1].usage == 0
+    assert d.ports[9].users == []
+    assert d.ports[11].usage == 1
+    assert d.ports[11].users == ["test"]
+    assert len(Port.all_ports) == 16
+    assert len(Device.all_devices) == 1
+    assert [p for p in Port.all_ports if p.usage == 1] == [d.ports[11]]
+
+def test_port_methods():
+    """
+    Don't make new d, call it from the class variable. 
+    It passes from one method to another, saved in the Class itself
+    """
+    d = Device.all_devices[0] 
+    n = 3
+    assert len(Device.all_devices) == 1
+    assert d.ports[n].position == n+1
+    assert len(Port.all_ports) == 16
+    assert len(Device.all_devices) == 1
+    assert Port.report_available_ports() == [p for p in Port.all_ports if p.usage == 0]
+    assert [p.position for p in Port.report_available_ports()] == [1,2,3,4,5,6,7,8,9,10,11,13,14,15,16]
+    assert Port.count_available_ports() == 15
+    assert Port.report_ref_ports() == []
+    Port.remove_user("test")
+    assert Port.count_available_ports() == 16
     
-    assert type(device.port_usage[0].users) == list
-    device.set_usage([11, 12, 13], "new_run", 2)
-    
-    assert device.port_usage[10].usage==2
-    assert device.port_usage[10].users==["new_run"]
-    
-    assert device.port_usage[11].usage==2
-    assert device.port_usage[11].users==["new_run"]
-    
-    assert device.port_usage[12].usage==2
-    assert device.port_usage[12].users==["new_run"]
+def test_device_methods():
+    """
+    these are labJack-specific and require one or more Labjacks to be connrected
+    """
+    pass
 
-    device.set_usage([11], "second_run", 2)
-    assert device.port_usage[10].usage==2
-    assert device.port_usage[10].users==["new_run", "second_run"]
+def test_timecourse_init():
+    pass
 
-    device.set_usage([3], "third_run", 2)
-    assert device.port_usage[2].usage==2
-    assert device.port_usage[2].users==["third_run"]
-
-    device.set_usage([1, 16], "last_run", 1)
-    assert len(device.report_available_ports())==len([2,4,5,6,7,8,9,10,14,15])
-
-    assert [p.position for p in device.report_ref_ports()]==[3,11,12,13]
-
-    device.remove_user("new_run")
-    assert [p.position for p in device.report_available_ports()]==[2,4,5,6,7,8,9,10,12,13,14,15]
-    assert [p.position for p in device.report_ref_ports()]==[3,11]
-
-def test_device_timecourse_interactions():
-    device = Device("Jason", 1323401, 1)
-    n_ports_requested = 4
-    current_run = Timecourse("bob", 1, tuple((device, 5)), available_test_ports([device])[:n_ports_requested])
-    
-
-def test_available_test_ports():
-    device = Device("Jason", 1323401, 1)
-    assert [p.position for p in available_test_ports([device])]==[N for N in range(1,17)]
-
-def test_timecourse():
-    device = Device("Jason", 1323401, 1)
-    n_ports_requested = 4
-    current_run = Timecourse("bob", 1, tuple((device, 5)), available_test_ports([device])[:n_ports_requested])
-    assert current_run.test_ports==[tuple((device, N)) for N in range(1,5)]
-    assert current_run.test_blanks == [None] * 4 
-    assert current_run.blanks_needed()==[tuple((device, x)) for x in range(1,6)]
-    #figure out how to mock the "get_measurements function"
-    current_run.measure_blanks([tuple((device, N)) for N in range(1,4)])
-    assert current_run.blanks_needed()==[tuple((device, N)) for N in range(4,6)]
     
 if __name__ == "__main__":
     import pytest 
