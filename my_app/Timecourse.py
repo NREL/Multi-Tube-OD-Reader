@@ -1,5 +1,6 @@
-from sampling import full_measurement
 from Port import Port
+from Device import Device
+import math
 import logging
 logger = logging.getLogger(__name__)
 
@@ -22,25 +23,37 @@ class Timecourse:
             for_ref = [self.reference_port]
         return for_tests + for_ref
     
-    def get_measurements(self, device, positions, n_reps):
-        #keep this separate so it can be mocked during testing
-        return full_measurement(device.sn, positions, n_reps)
-
-    def measure_blanks(self, ports:list):
-        devices = [p.position for p in ports]
-        readings = self.get_measurements(, positions, 9)
-        for p, reading in zip(ports, readings):
-            if p in self.test_ports:
-                self.test_blanks[p.position-1]= reading
-                p.users.append(self.name)
-                p.usage = 1
-            elif p is self.reference_port:
-                self.reference_blank = reading
-                p.users.append(self.name)
-                p.usage = 2
-            else:
-                logging.warning("The blanked port is neither a reference or test port")
+    def read_blanks(self, ports:list):
+        devices = set(p.device for p in ports)
+        for device in devices:
+            positions = [p.position for p in ports if p.device == device]
+            readings = Device.measure_voltages(device.sn, positions, 9)
+            for p, reading in zip(ports, readings):
+                if p in self.test_ports:
+                    self.test_blanks[p.position-1]= reading
+                    p.users.append(self.name)
+                    p.usage = 1
+                elif p is self.reference_port:
+                    self.reference_blank = reading
+                    p.users.append(self.name)
+                    p.usage = 2
+                else:
+                    logging.warning("The blanked port is neither a reference or test port")
     
+    @staticmethod
+    def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
+        v_ref_now = measurements.pop(0)
+        #voltage is proportional to intenisty
+        #abs = -log(I/I0) =log(I0/I)
+        # A-A(ref) = log(I0/I)-log(I0/I)(Ref)
+        #log(A) - log(B) = log(A/B)
+        return [math.log10((v_test_zero/v_test_now)/(v_ref_zero/v_ref_now)) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
+    
+
     def stop_experiment(self):
         Port.remove_user(self.name)
+        devices, timecourses = Device.load_pickle
+        timecourses.remove(self)
+        Device.save_pickle()
+
                 

@@ -7,11 +7,11 @@ class Port:
 
     def __init__(self, device, position) -> None:
         #register new device in registrar
-        Port.all_connected.append(self)
         self.users = []
         self.usage = 0
         self.device = device
         self.position = position
+        Port.all_ports.append(self)
 
     @classmethod
     def report_available_ports(cls):

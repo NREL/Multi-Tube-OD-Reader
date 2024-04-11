@@ -1,5 +1,5 @@
 from LabJackPython import Close
-import math
+from Timecourse import Timecourse
 from time import time, sleep, monotonic
 from datetime import datetime
 import argparse
@@ -78,14 +78,7 @@ def get_measurement_row(test:dict = test, ref_port = ref_port, ref_device = ref_
     timepoint = monotonic()
     return measurements_row, temp, timepoint
 
-def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
-    v_ref_now = measurements.pop(0)
-    #voltage is proportional to intenisty
-    #abs = -log(I/I0) =log(I0/I)
-    # A-A(ref) = log(I0/I)-log(I0/I)(Ref)
-    #log(A) - log(B) = log(A/B)
-    return [math.log10((v_test_zero/v_test_now)/(v_ref_zero/v_ref_now)) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
-    
+
 def save_row(row:list, file = file ):
     row = (str(x) for x in row)
     with open(file, "a+") as f:
@@ -107,7 +100,7 @@ starttime = monotonic()
 def per_iteration():
     #get and save data to new row.
     new_row, temp, timepoint = get_measurement_row()
-    new_OD = voltage_to_OD(v_ref_zero = t_zero_ref_voltage, time_zero_voltages=t_zero_voltage_list, measurements=new_row)
+    new_OD = Timecourse.voltage_to_OD(v_ref_zero = t_zero_ref_voltage, time_zero_voltages=t_zero_voltage_list, measurements=new_row)
     new_OD.insert(0, temp)
     new_OD.insert(0, (timepoint - starttime)/60)
     save_row(new_OD)
