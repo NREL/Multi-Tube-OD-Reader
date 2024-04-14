@@ -7,6 +7,11 @@ import timecourse
 import random
 import time
 
+"""
+The goal is to be able to do everything that the app does but without shiny
+Then pull in the functions into the shiny app
+Shiny is mostly a navigation and display system, not a data handler system
+"""
 
 
 def test_device_and_port_init():
