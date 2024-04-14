@@ -1,12 +1,7 @@
 
 from LabJackPython import Close
-from time import sleep
 from Port import Port
-from sampling import retry
 import u3
-import statistics
-import os
-import pickle
 import logging
 logger = logging.getLogger(__name__)
 
