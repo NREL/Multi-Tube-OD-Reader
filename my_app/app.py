@@ -5,23 +5,18 @@ from Configure_hardware import configure_ui, configure_server
 from reconfiguring_setup_new_run import setup_ui, setup_server
 from accordion_plots_module import accordion_plot_ui, accordion_plot_server
 from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device
+from timecourse import CONFIG_PATH
 import os
 import sys
 from my_app.Device import load_pickle, save_pickle, search_for_new_hardware
 
-#check if run as exe or script file, give current directory accordingly
-if getattr(sys, 'frozen', False):
-    application_path = os.path.dirname(sys.executable)
-elif __file__:
-    application_path = os.path.dirname(__file__)
 
-CONFIG_PATH = os.path.join(application_path, "config.dat")
 
 if os.path.isfile(CONFIG_PATH):
     pass
 else:
     hardware = search_for_new_hardware()
-    save_pickle(CONFIG_PATH, [hardware,[]])
+    save_pickle(CONFIG_PATH, [hardware,[],[]])
 
 app_ui = ui.page_navbar(
     theme.materia(),

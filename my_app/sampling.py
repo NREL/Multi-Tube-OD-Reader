@@ -1,46 +1,12 @@
 from LabJackPython import Close, LJE_LABJACK_NOT_FOUND
 from time import sleep
+from timecourse import retry
 import u3
 import statistics
 import pickle
 import os
 import sys
 
-
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-
-    return os.path.join(base_path, relative_path)
-
-'''
-You should use this script in the .py file you're trying to compile with PyInstaller. 
-Don't put this code snippet in the .spec file, that will not work. 
-Access your files by substituting the path you'd normally type by resource_path("file_to_be_accessed.mp3"). 
-Be wary that you should use max' answer for the current version of PyInstaller. 
-'''
-
-def retry(max_retries, wait_time):
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            retries = 0
-            while True:
-                if retries < max_retries:
-                    try:
-                        result = func(*args, **kwargs)
-                        return result
-                    except Exception as e:
-                        retries += 1
-                        sleep(wait_time)
-                        print(f"Exception given: {e}")
-                else:
-                    raise Exception(f"Max retries of function {func} exceeded. ")
-        return wrapper
-    return decorator
 
 
 def bad_name(st): 
@@ -65,8 +31,6 @@ def valid_sn():
     return sn
 
 
-def kelvin_to_celcius(k):
-    return k-273.15
 
 @retry(max_retries = 4, wait_time = 1)
 def configure_device(serialNumber, DAC_voltages, ports):
@@ -127,13 +91,7 @@ def full_measurement(serialNumber, ports:list, n_reps):
 def stdev_measurement(array = n_measurements):
     return np.std(array, axis = 0)
 """
-@retry(max_retries = 4, wait_time = 1)
-def get_temp(serialNumber):
-   d = u3.U3(firstFound = False, serial = serialNumber)
-   temp = kelvin_to_celcius(d.getTemperature())
-   Close()
-   del d
-   return temp
+
 
 def add_to_file(file_name, list):
     out_file = open(file_name, "a+") #a+ mode creates non-existing file and appends to end if it does exist.
