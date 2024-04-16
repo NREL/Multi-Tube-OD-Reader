@@ -118,7 +118,7 @@ def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
     #log(A) - log(B) = log(A/B)
     return [math.log10((v_test_zero/v_test_now)/(v_ref_zero/v_ref_now)) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
 
-def per_iteration(experiment_name, starttime, ref_device, ref_port, test, ref_voltage_t_zero, t_zero_voltages, config_path):
+def per_iteration(experiment_name, starttime, ref_device, ref_port, test, ref_voltage_t_zero, t_zero_voltages):
     #save Timepoint, Temp, ODs to new row in output file.
     new_row, temp, timepoint = get_measurement_row(test, ref_port, ref_device)
     new_OD = voltage_to_OD(ref_voltage_t_zero, t_zero_voltages, new_row)
@@ -129,10 +129,12 @@ def per_iteration(experiment_name, starttime, ref_device, ref_port, test, ref_vo
     #self terminate if pickle not found 
     #keep independent, infinite loops from getting out of control
     try:
-        with open(config_path, 'rb') as f:
-            running_experiments = pickle.load(f)[2]
+        with open(CONFIG_PATH, 'rb') as f:
+            running_experiments = pickle.load(f)["Experiment_names"]
+        print("it worked", running_experiments)
     except:
         save_row(["#self terminating because CONFIG file was not found"])
+        print("it failed")
         sys.exit()
 
     #self terminate if run not found in pickle
@@ -157,7 +159,7 @@ if __name__ == "__main__":
 
     while True:
         try:
-            per_iteration(experiment_name, starttime, ref_device, ref_port, test, ref_voltage_t_zero, t_zero_voltages, CONFIG_PATH)
+            per_iteration(experiment_name, starttime, ref_device, ref_port, test, ref_voltage_t_zero, t_zero_voltages)
             
             #wait remainder of interval until next read
             sleep(interval - (monotonic()-starttime) % interval)
