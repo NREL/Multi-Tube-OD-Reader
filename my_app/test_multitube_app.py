@@ -86,9 +86,10 @@ def test_experiment():
     assert len(t.test_blanks) == 15
     assert Experiment.all == [t]
     assert t.blanks_needed() == test_ports + [ref_port]
+    t.start_experiemnt()
 
 
-def test_timecourse_without_device():
+def test_timecourse_without_device(mocker):
     def voltages(sn, ports:list):
         return [random.uniform(0.1, 2.3) for x in ports]
     def temperature(sn):
@@ -108,11 +109,21 @@ def test_timecourse_without_device():
     timecourse.sys.exit = MagicMock(side_effect = None)
     starttime = time.monotonic()
     d = Device.all[0]
-    test = timecourse.lists_to_dictlist([d.name for x in range(1,6)], list(range(1,6)))
-    #assert timecourse.per_iteration("test_exp", starttime, d.name, 0, test, 2.3, [1,1,1,1,1], CONFIG_PATH) == []
+    test = timecourse.lists_to_dictlist([d.sn for x in range(1,6)], list(range(1,6)))
+    assert test == {d.sn:list(range(1,6))}
+    spy = mocker.spy(timecourse, "get_measurement_row")
+    timecourse.per_iteration("test_experiment", starttime, d.sn, 0, test, 2.3, [1,1,1,1,1])
+    assert spy.call_count == 1
+    timecourse.measure_voltage.assert_any_call(d.sn, ports = [0])
+    timecourse.measure_voltage.assert_called_with(d.sn, ports = list(range(1,6)))
+    timecourse.measure_temp.assert_called_with(d.sn)
+    timecourse.sys.exit.assert_not_called()
+    t = Experiment.all[0]
+    t.stop_experiment()
+    timecourse.per_iteration("test_experiment", starttime, d.sn, 0, test, 2.3, [1,1,1,1,1])
+    timecourse.sys.exit.assert_called_once()
+    timecourse.save_row.assert_called_with(["#Self terminating because run was removed from the pickle file."])
 
-
-    
 if __name__ == "__main__":
     import pytest 
     pytest.main()

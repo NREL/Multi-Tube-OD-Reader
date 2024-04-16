@@ -60,22 +60,18 @@ def reconcile_pickle():
     devices = pickle_dict["Devices"] + Device.all     
     devices_as_tuples = [tuple((d.name, d.sn)) for d in devices]
     unique_devices = set(devices_as_tuples)
-    try:
-        device_indices = [devices_as_tuples.index(x) for x in unique_devices]
-        devices = [devices[x] for x in device_indices]
-    except TypeError:
-        devices = []
+    
+    device_indices = [devices_as_tuples.index(x) for x in unique_devices]
+    devices = [devices[x] for x in device_indices]
         
     experiments = pickle_dict["Experiments"] + Experiment.all
-    experiments_as_tuples = [tuple((x.name, x.test_blanks)) for x in experiments]
+    experiments_as_tuples = [tuple((x.name, tuple(x.test_blanks))) for x in experiments]
     unique_experiments = set(experiments_as_tuples) 
-    try:
-        experiment_indices = [experiments_as_tuples.index(x) for x in unique_experiments]
-        experiments = [experiments[x] for x in experiment_indices]
-        experiment_names = [x.name for x in experiments]
-    except:
-        experiments = []
-        experiment_names = []
+
+    experiment_indices = [experiments_as_tuples.index(x) for x in unique_experiments]
+    experiments = [experiments[x] for x in experiment_indices]
+    experiment_names = [x.name for x in experiments]
+
 
     pickle_dict = {"Devices":devices,"Experiments":experiments,"Experiment_names":experiment_names}
     with open(CONFIG_PATH, 'wb') as f:
@@ -128,10 +124,10 @@ class Experiment:
                 logging.warning("The blanked port is neither a reference or test port")
     
     def start_experiemnt(self):
-        Experiment.add_to_pickle(experiment= self)
+        add_to_pickle(experiment= self)
 
-    def stop_experiment(cls, self):
-        cls.remove_from_pickle(experiment = self)
+    def stop_experiment(self):
+        remove_from_pickle(experiment = self)
         Port.remove_user(self.name)
         Experiment.all.remove(self)
         
