@@ -4,11 +4,8 @@ import pickle
 import sys
 import os
 import statistics
-import math
 import u3
 
-#use sys.argv instead of argparse to get arg
-#import experimental setup from first few rows of file. 
 
 def resource_path(relative_path):
     """ Get path to resource, works for dev and for PyInstaller """
@@ -20,7 +17,6 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-
 #check if run as exe or script file, give current directory accordingly
 if getattr(sys, 'frozen', False):
     application_path = os.path.dirname(sys.executable)
@@ -29,6 +25,8 @@ elif __file__:
 
 #path to pickle for confirming run is still active
 CONFIG_PATH = os.path.join(application_path, "config.dat")
+
+
 
 def retry(max_retries, wait_time):
     def decorator(func):
@@ -52,7 +50,7 @@ def retry(max_retries, wait_time):
 def measure_voltage(serialNumber, ports:list, n_reps = 9, DAC_voltages =[5,2.7]):
     d = u3.U3(firstFound = False, serial = serialNumber)
     #ports are 1-16, but the labjack refers to 0-15
-    positions = [p-1 for p in ports]
+    positions = [int(p)-1 for p in ports]
     fio = sum([2**(x) for x in positions if x <= 7])
     eio = sum([2**(x-8) for x in positions if x >= 8])
     d.configIO(FIOAnalog = fio, EIOAnalog= eio)
@@ -70,12 +68,6 @@ def measure_voltage(serialNumber, ports:list, n_reps = 9, DAC_voltages =[5,2.7])
     for i,first_list in enumerate(data[0]):
         voltages.append(statistics.mean(list[i] for list in data))
     return voltages
-
-def collect_settings(file):
-    with open(file, "r") as f:
-        lines = f.readlines()[range(6)]
-        #split by delimiter, remove left item in table
-        return [line.split("\t")[1:] for line in lines]
 
 @retry(max_retries = 4, wait_time = 1)
 def measure_temp(serialNumber):
@@ -113,7 +105,10 @@ def save_row(row:list, file):
     with open(file, "a+") as f:
         f.write("\t".join(row))
         f.write("\n")
-
+"""
+Skip this in favor of voltages: less weight on timecourse
+also raw data will answer more questions: Do we need a reference? Do we need a blank? do things change over time.
+Also not having a blank/reference will help A LOT with moving around data/controls, etc.
 def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
     v_ref_now = measurements.pop(0)
     #voltage is proportional to intenisty
@@ -122,38 +117,44 @@ def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
     #log(A) - log(B) = log(A/B)
     return [math.log10((v_test_zero/v_test_now)/(v_ref_zero/v_ref_now)) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
 
-def per_iteration(experiment_name, starttime, ref_device, ref_port, test, ref_voltage_t_zero, t_zero_voltages):
+"""
+def per_iteration(experiment_name, starttime, ref_device, ref_port, test, ref_voltage_t_zero, t_zero_voltages, file):
     #save Timepoint, Temp, ODs to new row in output file.
-    new_row, temp, timepoint = get_measurement_row(test, ref_port, ref_device)
-    new_OD = voltage_to_OD(ref_voltage_t_zero, t_zero_voltages, new_row)
+    new_OD, temp, timepoint = get_measurement_row(test, ref_port, ref_device)
+    #new_OD = voltage_to_OD(ref_voltage_t_zero, t_zero_voltages, new_row)
     new_OD.insert(0, temp)
     new_OD.insert(0, (timepoint - starttime)/60)
-    save_row(new_OD)
+    save_row(new_OD, file)
 
     #self terminate if pickle not found 
     #keep independent, infinite loops from getting out of control
     try:
         with open(CONFIG_PATH, 'rb') as f:
             running_experiments = pickle.load(f)["Experiment_names"]
-        print("it worked", running_experiments)
     except:
-        save_row(["#self terminating because CONFIG file was not found"])
-        print("it failed")
+        save_row(["#self terminating because CONFIG file was not found"], file)
         sys.exit()
 
     #self terminate if run not found in pickle
     #keep independent, infinite loops from getting out of control
     if experiment_name not in running_experiments:
-        save_row(["#Self terminating because run was removed from the pickle file."])
+        save_row(["#Self terminating because run was removed from the pickle file."], file)
         sys.exit()
 
+
+
+################################# MAIN ######################################################
 if __name__ == "__main__":
-    #path to data file
-    file = resource_path( "..\\" + sys.argv[1])
+    #path to ouput data file
+    file = resource_path(sys.argv[1])
     
     #collect header info
-    info, device_names, device_ids, ports, usages, t_zero_voltages  = collect_settings(file)  
-    experiment_name, interval =info
+    with open(file, "r") as f:
+        lines = f.readlines()[0:6]
+        #split by delimiter, remove left item in table
+    info, device_names, device_ids, ports, usages, t_zero_voltages = [line.split("\t")[1:] for line in lines]
+    experiment_name, interval = info
+    interval = int(interval)*60
 
     ref_voltage_t_zero = t_zero_voltages.pop(0)
     ref_device = device_ids.pop(0)
@@ -161,12 +162,20 @@ if __name__ == "__main__":
     starttime = monotonic()
     test = lists_to_dictlist(device_ids, ports)
 
+
+    #start iterating, stop if more than 4 consecutive (or near consecutive) failures
+    failures = 0
     while True:
         try:
-            per_iteration(experiment_name, starttime, ref_device, ref_port, test, ref_voltage_t_zero, t_zero_voltages)
-            
+            per_iteration(experiment_name, starttime, ref_device, ref_port, test, ref_voltage_t_zero, t_zero_voltages, file = file)
+            if failures > 0:
+                failures = failures -1
             #wait remainder of interval until next read
             sleep(interval - (monotonic()-starttime) % interval)
         except Exception as e:
-            save_row([f"#{e}"])
+            failures +=1
+            save_row([f"#{e}"], file)
             sleep(2.3)
+            if failures >= 4:
+                save_row(["#Stopping timecourse due to failures"], file)
+                sys.exit()
