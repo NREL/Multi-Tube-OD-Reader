@@ -1,4 +1,3 @@
-
 from LabJackPython import Close
 from time import sleep, monotonic
 import pickle
@@ -50,17 +49,22 @@ def retry(max_retries, wait_time):
     return decorator
 
 @retry(max_retries = 4, wait_time = 1)
-def measure_voltage(serialNumber, ports:list, n_reps = 9):
+def measure_voltage(serialNumber, ports:list, n_reps = 9, DAC_voltages =[5,2.7]):
     d = u3.U3(firstFound = False, serial = serialNumber)
     #ports are 1-16, but the labjack refers to 0-15
-    positions = [p.position-1 for p in ports]
+    positions = [p-1 for p in ports]
     fio = sum([2**(x) for x in positions if x <= 7])
     eio = sum([2**(x-8) for x in positions if x >= 8])
     d.configIO(FIOAnalog = fio, EIOAnalog= eio)
+    if DAC_voltages:
+        for x,v in enumerate(DAC_voltages):
+            d.getFeedback(u3.DAC8(Dac = x, Value = d.voltageToDACBits(v, x )))
     data = []
     for x in range(n_reps):
         if sleep(1/n_reps) is None:   
             data.append(d.binaryListToCalibratedAnalogVoltages(d.getFeedback([u3.AIN(PositiveChannel=n, NegativeChannel=31, LongSettling=True, QuickSample=False) for n in positions]), isLowVoltage= True, isSingleEnded= True, isSpecialSetting= False ))
+    for x,v in enumerate([0,0]):
+            d.getFeedback(u3.DAC8(Dac = x, Value = d.voltageToDACBits(v, x )))
     Close()
     voltages = []
     for i,first_list in enumerate(data[0]):
