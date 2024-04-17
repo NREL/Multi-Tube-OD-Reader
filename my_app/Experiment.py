@@ -46,9 +46,11 @@ def remove_from_pickle(device:object = None, experiment:object = None):
     local_pickle = load_pickle()
     if device:
         local_pickle["Devices"].remove(device)
+        Device.all.remove(device)
     if experiment:
         local_pickle["Experiments"].remove(experiment)
         local_pickle["Experiment_names"].remove(experiment.name)
+        Experiment.all.remove(experiment)
     with open(CONFIG_PATH, 'wb') as f:
         pickle.dump(local_pickle, f, pickle.HIGHEST_PROTOCOL)
 
@@ -63,6 +65,7 @@ def reconcile_pickle():
     
     device_indices = [devices_as_tuples.index(x) for x in unique_devices]
     devices = [devices[x] for x in device_indices]
+    Device.all = devices
         
     experiments = pickle_dict["Experiments"] + Experiment.all
     experiments_as_tuples = [tuple((x.name, tuple(x.test_blanks))) for x in experiments]
