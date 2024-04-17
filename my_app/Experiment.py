@@ -95,6 +95,7 @@ class Experiment:
         self.test_ports = test_ports
         self.test_blanks = [None for x in test_ports]
         Experiment.all.append(self)
+        add_to_pickle(experiment = self)
 
     def __eq__(self, other):
         return (self.name == other.name and self.interval == other.interval and self.test_blanks == other.test_blanks)
