@@ -11,6 +11,8 @@ class Port:
         self.usage = 0
         self.device = device
         self.position = position
+        self.cal0 = 0
+        self.cal1 = 0
         Port.all.append(self)
 
     def __eq__(self, other):

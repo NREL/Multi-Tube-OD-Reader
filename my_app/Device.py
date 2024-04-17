@@ -1,6 +1,7 @@
 
 from LabJackPython import Close
 from Port import Port
+from timecourse import measure_voltage
 import u3
 import logging
 logger = logging.getLogger(__name__)
@@ -34,6 +35,25 @@ class Device():
             Device.all.append(Device(name, sn))
         Close()
         logger.info("Connected devices: %s", device_names)
+
+    def read_calibration(self, port_objects, step, dac_set):
+        """
+        three-steps for readings
+        give target_od = 0 for empty tube
+        call again with reference tube at known OD
+        """
+        positions = [p.position for p in port_objects]
+        voltages = measure_voltage(self.sn, positions, DAC_voltages = dac_set, n_reps=9)
+        if step == 0:
+            for p, v in zip(port_objects, voltages):
+                p.cal0 = v
+        else:
+            for p, v in zip(port_objects, voltages):
+                p.cal1 = v
+        return voltages
+    
+    
+
 
 
     
