@@ -8,7 +8,7 @@ from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_s
 from timecourse import CONFIG_PATH
 import os
 import sys
-from my_app.Device import load_pickle, save_pickle, search_for_new_hardware
+from Device import load_pickle, save_pickle, search_for_new_hardware
 
 
 

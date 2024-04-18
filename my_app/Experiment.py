@@ -1,6 +1,6 @@
 from Port import Port
 from Device import Device
-from timecourse import save_row, CONFIG_PATH
+from timecourse import append_list_to_tsv, CONFIG_PATH
 import os
 import math
 import pickle

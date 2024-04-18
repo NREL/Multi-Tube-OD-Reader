@@ -1,5 +1,5 @@
 from LabJackPython import Close
-from time import sleep, monotonic
+import time
 import pickle
 import sys
 import os
@@ -17,7 +17,7 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-#check if run as exe or script file, give current directory accordingly
+#Get path to current directory
 if getattr(sys, 'frozen', False):
     application_path = os.path.dirname(sys.executable)
 elif __file__:
@@ -29,6 +29,9 @@ CONFIG_PATH = os.path.join(application_path, "config.dat")
 
 
 def retry(max_retries, wait_time):
+    """
+    Decorator to retry a function if it throws an exception
+    """
     def decorator(func):
         def wrapper(*args, **kwargs):
             retries = 0
@@ -39,36 +42,56 @@ def retry(max_retries, wait_time):
                         return result
                     except Exception as e:
                         retries += 1
-                        sleep(wait_time)
+                        time.sleep(wait_time)
                         print(f"Exception given: {e}")
                 else:
                     raise Exception(f"Max retries of function {func} exceeded. ")
         return wrapper
     return decorator
 
+#LabJack U3-LV throws exception if connection is not closed
+#retry all LabJack U3 interactions in case LabJack is busy taking a reading for a parallel experiment
 @retry(max_retries = 4, wait_time = 1)
-def measure_voltage(serialNumber, ports:list, n_reps = 9, DAC_voltages =[5,2.7]):
+def measure_voltage(serialNumber, ports:list, n_reps = 9, DAC_voltages =[5,2.6]):
+    """
+    Interface with hardware to measure voltages.
+    LabJack U3-LV has 16 analog inputs (FIO and EIO called by a sum of powers of 2)
+    U3-LV has 2 digital-to-analog converters (DAC0 and DAC1)
+        DAC0 -> power-switching relay to LEDs & Sensors
+        DAC1 -> linear voltage regulator to sensors
+    """
     d = u3.U3(firstFound = False, serial = serialNumber)
-    #ports are 1-16, but the labjack refers to 0-15
     positions = [int(p)-1 for p in ports]
     fio = sum([2**(x) for x in positions if x <= 7])
     eio = sum([2**(x-8) for x in positions if x >= 8])
     d.configIO(FIOAnalog = fio, EIOAnalog= eio)
+    
+    #set DAC voltages to turn on power/set sensor voltage
     if DAC_voltages:
         for x,v in enumerate(DAC_voltages):
             d.getFeedback(u3.DAC8(Dac = x, Value = d.voltageToDACBits(v, x )))
+    
+    #repeat measurment n_reps times over y seconds for n_reps and y in the if time.sleep(y/n_reps) statement
     data = []
     for x in range(n_reps):
-        if sleep(1/n_reps) is None:   
+        if time.sleep(1/n_reps) is None:   
             data.append(d.binaryListToCalibratedAnalogVoltages(d.getFeedback([u3.AIN(PositiveChannel=n, NegativeChannel=31, LongSettling=True, QuickSample=False) for n in positions]), isLowVoltage= True, isSingleEnded= True, isSpecialSetting= False ))
+    
+    #turn off LEDs/sensors by setting DAC voltages to 0
     for x,v in enumerate([0,0]):
             d.getFeedback(u3.DAC8(Dac = x, Value = d.voltageToDACBits(v, x )))
-    Close()
+    Close() #all LabJack U3 devices
+    
+    #return an average voltage 
     voltages = []
-    for i,first_list in enumerate(data[0]):
-        voltages.append(statistics.mean(list[i] for list in data))
+    for i,not_used in enumerate(data[0]):
+        #flatten list of lists into list of average voltages
+        voltages.append(statistics.mean(row[i] for row in data))
+    
     return voltages
 
+#LabJack U3-LV throws exception if connection is not closed
+#retry all LabJack U3 interactions in case LabJack is busy taking a reading for a parallel experiment
 @retry(max_retries = 4, wait_time = 1)
 def measure_temp(serialNumber):
    d = u3.U3(firstFound = False, serial = serialNumber)
@@ -80,6 +103,19 @@ def measure_temp(serialNumber):
 def kelvin_to_celcius(k):
     return k-273.15
 
+def get_measurement_row(test:dict, ref_port, ref_device, starttime):
+    temperatures = []
+    measurements_row = []
+    measurements_row =measure_voltage(ref_device, ports=[ref_port])
+    for device, ports in test.items():
+        measurements_row = measurements_row + measure_voltage(device, ports=ports)
+        temperatures.append(measure_temp(device))
+    temp = sum(temperatures)/len(temperatures)
+    timepoint = time.monotonic()
+    measurements_row.insert(0, temp)
+    measurements_row.insert(0, (timepoint - starttime)/60)
+    return measurements_row
+
 def lists_to_dictlist(keys, values):
     dict = {}
     for key, value in zip(keys, values):
@@ -89,21 +125,10 @@ def lists_to_dictlist(keys, values):
             dict[key] = [value]
     return dict
 
-def get_measurement_row(test:dict, ref_port, ref_device):
-    temperatures = []
-    measurements_row = []
-    measurements_row =measure_voltage(ref_device, ports=[ref_port])
-    for device, ports in test.items():
-        measurements_row = measurements_row + measure_voltage(device, ports=ports)
-        temperatures.append(measure_temp(device))
-    temp = sum(temperatures)/len(temperatures)
-    timepoint = monotonic()
-    return measurements_row, temp, timepoint
-
-def save_row(row:list, file):
-    row = (str(x) for x in row)
+def append_list_to_tsv(input:list, file):
+    input = (str(x) for x in input)
     with open(file, "a+") as f:
-        f.write("\t".join(row))
+        f.write("\t".join(input))
         f.write("\n")
 """
 Skip this in favor of voltages: less weight on timecourse
@@ -118,27 +143,23 @@ def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
     return [math.log10((v_test_zero/v_test_now)/(v_ref_zero/v_ref_now)) for v_test_now, v_test_zero in zip(measurements,time_zero_voltages)]
 
 """
-def per_iteration(experiment_name, starttime, ref_device, ref_port, test, ref_voltage_t_zero, t_zero_voltages, file):
-    #save Timepoint, Temp, ODs to new row in output file.
-    new_OD, temp, timepoint = get_measurement_row(test, ref_port, ref_device)
-    #new_OD = voltage_to_OD(ref_voltage_t_zero, t_zero_voltages, new_row)
-    new_OD.insert(0, temp)
-    new_OD.insert(0, (timepoint - starttime)/60)
-    save_row(new_OD, file)
-
-    #self terminate if pickle not found 
-    #keep independent, infinite loops from getting out of control
-    try:
-        with open(CONFIG_PATH, 'rb') as f:
-            running_experiments = pickle.load(f)["Experiment_names"]
-    except:
-        save_row(["#self terminating because CONFIG file was not found"], file)
+def kill_switch(pickle_path, output_file):
+    #controls to shut down otherise-infinite loops 
+    #terminate if output file has been renamed/moved/deleted.
+    if not os.path.isfile(output_file):
         sys.exit()
 
-    #self terminate if run not found in pickle
-    #keep independent, infinite loops from getting out of control
+    #terminate if pickle not found 
+    try:
+        with open(pickle_path, 'rb') as f:
+            running_experiments = pickle.load(f)["Experiment_names"]
+    except Exception as e:
+        append_list_to_tsv([f"#self terminating. Could not load {pickle_path}"], output_file)
+        sys.exit()
+
+    #terminate if run not found in pickle
     if experiment_name not in running_experiments:
-        save_row(["#Self terminating because run was removed from the pickle file."], file)
+        append_list_to_tsv(["#Self terminating because run was not found in the pickle file."], output_file)
         sys.exit()
 
 
@@ -154,28 +175,41 @@ if __name__ == "__main__":
         #split by delimiter, remove left item in table
     info, device_names, device_ids, ports, usages, t_zero_voltages = [line.split("\t")[1:] for line in lines]
     experiment_name, interval = info
-    interval = int(interval)*60
-
+    interval = float(interval)*60
     ref_voltage_t_zero = t_zero_voltages.pop(0)
     ref_device = device_ids.pop(0)
     ref_port = ports.pop(0)
-    starttime = monotonic()
+    starttime = time.monotonic()
     test = lists_to_dictlist(device_ids, ports)
 
+    #print start time to header
+    append_list_to_tsv([f"#{time.asctime()}"], file)
 
-    #start iterating, stop if more than 4 consecutive (or near consecutive) failures
-    failures = 0
+    failures = 0 #track consecutive failed iterations
     while True:
         try:
-            per_iteration(experiment_name, starttime, ref_device, ref_port, test, ref_voltage_t_zero, t_zero_voltages, file = file)
-            if failures > 0:
-                failures = failures -1
+            #check kill switch
+            #append_list_to_tsv creates missing file
+            #must check kill switch first if file deletion/rename/move is a kill switch
+            kill_switch(CONFIG_PATH, file)
+
+            new_OD= get_measurement_row(test, ref_port, ref_device, starttime)
+            #new_OD = voltage_to_OD(ref_voltage_t_zero, t_zero_voltages, new_row)
+            append_list_to_tsv(new_OD, file)
+            
+            #reset
+            failures = 0
+            
             #wait remainder of interval until next read
-            sleep(interval - (monotonic()-starttime) % interval)
+            time.sleep(interval - (time.monotonic()-starttime) % interval)
+
         except Exception as e:
-            failures +=1
-            save_row([f"#{e}"], file)
-            sleep(2.3)
+            failures += 1
+            
+            append_list_to_tsv([f"#{e}"], file) #save exception as commented out line in file
+            
             if failures >= 4:
-                save_row(["#Stopping timecourse due to failures"], file)
+                append_list_to_tsv(["#Stopping timecourse due to failures"], file)
                 sys.exit()
+            
+            time.sleep(2.3)
