@@ -25,9 +25,10 @@ from time import sleep
 reconcile_pickle()
 d1, d2 = Device.all
 d1.name
-def check_all(device):
+def check_all(device, voltage):
     for p in device.ports:
-        print(device.read_calibration([p], step = 0, dac_set =[5,2.6]))
+        print(device.read_calibration([p], step = 0, dac_set =[5,voltage])[0])
         sleep(2)
 
-check_all(d1)
+d1.name
+check_all(d)

@@ -55,18 +55,15 @@ def remove_from_pickle(device:object = None, experiment:object = None):
         pickle.dump(local_pickle, f, pickle.HIGHEST_PROTOCOL)
 
 def reconcile_pickle():
-    #concatenate pickle list + other lists, 
-    #make set of 
-    pickle_dict = load_pickle()
+    """
+    Used to update the inventory of connected devices and running experiments
+    as kept in the pickled dictionary. 
+    Device.discovery populates Device.all with all connected hardware
+    """
     Device.discovery()
-    devices = pickle_dict["Devices"] + Device.all     
-    devices_as_tuples = [tuple((d.name, d.sn)) for d in devices]
-    unique_devices = set(devices_as_tuples)
-    
-    device_indices = [devices_as_tuples.index(x) for x in unique_devices]
-    devices = [devices[x] for x in device_indices]
-    Device.all = devices
-        
+
+    pickle_dict = load_pickle()
+       
     experiments = pickle_dict["Experiments"] + Experiment.all
     experiments_as_tuples = [tuple((x.name, tuple(x.test_blanks))) for x in experiments]
     unique_experiments = set(experiments_as_tuples) 
@@ -75,8 +72,7 @@ def reconcile_pickle():
     experiments = [experiments[x] for x in experiment_indices]
     experiment_names = [x.name for x in experiments]
 
-
-    pickle_dict = {"Devices":devices,"Experiments":experiments,"Experiment_names":experiment_names}
+    pickle_dict = {"Devices":Device.all,"Experiments":experiments,"Experiment_names":experiment_names}
     with open(CONFIG_PATH, 'wb') as f:
         pickle.dump(pickle_dict, f, pickle.HIGHEST_PROTOCOL)
 

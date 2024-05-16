@@ -49,7 +49,7 @@ def retry(max_retries, wait_time):
         return wrapper
     return decorator
 
-#LabJack U3-LV throws exception if connection is not closed
+#LabJack U3-LV throws exception if connection is busy or not closed
 #retry all LabJack U3 interactions in case LabJack is busy taking a reading for a parallel experiment
 @retry(max_retries = 4, wait_time = 1)
 def measure_voltage(serialNumber, ports:list, n_reps = 9, DAC_voltages =[5,2.6]):
@@ -110,7 +110,7 @@ def get_measurement_row(test:dict, ref_port, ref_device, starttime):
     for device, ports in test.items():
         measurements_row = measurements_row + measure_voltage(device, ports=ports)
         temperatures.append(measure_temp(device))
-    temp = sum(temperatures)/len(temperatures)
+    temp = statistics.mean(temperatures)
     timepoint = time.monotonic()
     measurements_row.insert(0, temp)
     measurements_row.insert(0, (timepoint - starttime)/60)
@@ -158,9 +158,11 @@ def kill_switch(pickle_path, output_file):
         sys.exit()
 
     #terminate if run not found in pickle
+    """
     if experiment_name not in running_experiments:
         append_list_to_tsv(["#Self terminating because run was not found in the pickle file."], output_file)
         sys.exit()
+    """
 
 
 

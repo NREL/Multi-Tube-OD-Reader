@@ -26,14 +26,15 @@ class Device():
         """
         d = u3.openAllU3()
         device_sns= list(d.keys())
-        device_names = []
+        devices = []
         Close()
         for sn in device_sns:
             d = u3.U3(firstFound = False, serial = sn)
             name = d.getName()
-            device_names.append(name)
-            Device.all.append(Device(name, sn))
+            devices.append(Device(name, sn))
         Close()
+        Device.all = devices
+        device_names = [d.name for d in Device.all]
         logger.info("Connected devices: %s", device_names)
 
     def read_calibration(self, port_objects, step, dac_set):
