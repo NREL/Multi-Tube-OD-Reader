@@ -1,11 +1,13 @@
 from unittest.mock import MagicMock
 from Device import Device
-from Experiment import Experiment, load_pickle, add_to_pickle, remove_from_pickle, reconcile_pickle
+from Experiment import Experiment
 from Port import Port
-from timecourse import CONFIG_PATH
+from timecourse import CONFIG_PATH, resource_path, measure_temp, measure_voltage, per_iteration
+from timecourse import get_measurement_row, append_list_to_tsv, kill_switch, lists_to_dictlist
 import timecourse
 import random
 import time
+import sys
 
 """
 The goal is to be able to do everything that the app does but without shiny
@@ -46,10 +48,10 @@ def test_pickle_methods():
     d = Device.all[0] 
     d2 = Device("gamble", 320218)
     assert d.__class__.__name__ == "Device"
-    add_to_pickle(device = d) 
-    devices = load_pickle()["Devices"]
-    reconcile_pickle()
-    devices = load_pickle()["Devices"]
+    Experiment.add_to_pickle(device = d) 
+    devices = Experiment.load_pickle()["Devices"]
+    Experiment.reconcile_pickle()
+    devices = Experiment.load_pickle()["Devices"]
     assert len(devices) == 2
     
 def test_port_methods():
@@ -100,29 +102,30 @@ def test_timecourse_without_device(mocker):
     #test utility methods
     keys = ["a","b","c","d", "d", "d"]
     values = [1,2,3,4,5,6]
-    assert timecourse.lists_to_dictlist(keys, values) == {"a":[1], "b":[2], "c":[3], "d":[4,5,6]}
+    assert lists_to_dictlist(keys, values) == {"a":[1], "b":[2], "c":[3], "d":[4,5,6]}
     
     #
-    timecourse.measure_temp = MagicMock(side_effect = temperature)
-    timecourse.measure_voltage = MagicMock(side_effect = voltages)
-    timecourse.save_row = MagicMock(side_effect = output_row)
-    timecourse.sys.exit = MagicMock(side_effect = None)
+    measure_temp = MagicMock(side_effect = temperature)
+    measure_voltage = MagicMock(side_effect = voltages)
+    save_row = MagicMock(side_effect = output_row)
+    sys.exit = MagicMock(side_effect = None)
     starttime = time.monotonic()
     d = Device.all[0]
-    test = timecourse.lists_to_dictlist([d.sn for x in range(1,6)], list(range(1,6)))
+    test = lists_to_dictlist([d.sn for x in range(1,6)], list(range(1,6)))
     assert test == {d.sn:list(range(1,6))}
     spy = mocker.spy(timecourse, "get_measurement_row")
-    timecourse.per_iteration("test_experiment", starttime, d.sn, 0, test, 2.3, [1,1,1,1,1])
+    per_iteration("test_experiment", starttime, d.sn, 0, test, 2.3, [1,1,1,1,1]) #per_iteration has changed since
     assert spy.call_count == 1
-    timecourse.measure_voltage.assert_any_call(d.sn, ports = [0])
-    timecourse.measure_voltage.assert_called_with(d.sn, ports = list(range(1,6)))
-    timecourse.measure_temp.assert_called_with(d.sn)
-    timecourse.sys.exit.assert_not_called()
+    measure_voltage.assert_any_call(d.sn, ports = [0])
+    measure_voltage.assert_called_with(d.sn, ports = list(range(1,6)))
+    measure_temp.assert_called_with(d.sn)
+    sys.exit.assert_not_called()
     t = Experiment.all[0]
     t.stop_experiment()
-    timecourse.per_iteration("test_experiment", starttime, d.sn, 0, test, 2.3, [1,1,1,1,1])
-    timecourse.sys.exit.assert_called_once()
-    timecourse.save_row.assert_called_with(["#Self terminating because run was removed from the pickle file."])
+    per_iteration("test_experiment", starttime, d.sn, 0, test, 2.3, [1,1,1,1,1])
+    sys.exit.assert_called_once()
+    save_row.assert_called_with(["#Self terminating because run was removed from the pickle file."])
+
 
 if __name__ == "__main__":
     import pytest 
