@@ -3,6 +3,7 @@ from LabJackPython import Close
 from Port import Port
 from timecourse import measure_voltage
 import u3
+import time
 import logging
 logger = logging.getLogger(__name__)
 
@@ -14,28 +15,64 @@ class Device():
         self.name = name
         self.sn = sn
         self.ports = [Port(self, x) for x in range(1,17)]
-        Device.all.append(self)
+        if self not in Device.all:
+            Device.all.append(self)
+        
 
     def __eq__(self, other) -> bool:
-        return (self.name == other.name and self.sn == other.sn)
+        return (self.sn == other.sn)
     
+    def __hash__(self):
+        return hash(self.sn)
+
     @staticmethod
-    def discovery():
+    def discovery(reset = False):
         """
         call with Device.discovery() to create Device objects for each OD reader
         """
+        #get SNs of connected devices
         d = u3.openAllU3()
-        device_sns= list(d.keys())
-        devices = []
+        connected_sns = list(d.keys())
         Close()
-        for sn in device_sns:
+
+        #Do we keep known/pickled devices
+        if reset:
+            known_devices = []
+        else:
+            known_devices = [d.sn for d in Device.all]
+
+        #Only create objects for new devices
+        new_devices= [sn for sn in connected_sns if sn not in known_devices]
+        for sn in new_devices:
             d = u3.U3(firstFound = False, serial = sn)
             name = d.getName()
-            devices.append(Device(name, sn))
+            Device(name, sn)
+        Close() #close all connections
+
+        logger.info("Connected devices: %s", [d.name for d in Device.all])
+    
+    def connect(self):
+        d = u3.U3(firstFound = False, serial = self.sn)
+        return d
+    
+    def rename(self, new_name):
+        d = self.connect()    
+        d.setName(name = new_name)
+        self.name = new_name
         Close()
-        Device.all = devices
-        device_names = [d.name for d in Device.all]
-        logger.info("Connected devices: %s", device_names)
+
+    def blink(self):
+        d = self.connect()
+        delay = 0.15 #period between flashes
+        c = 0
+        while c < 25:
+            toggle = c % 2 
+            d.getFeedback(u3.LED(State = toggle)) # for built-in LED on LabJack
+            d.setDOState(16, c % 2) # for LED on CIO0
+            d.getFeedback(u3.DAC8(Dac = 0, Value = d.voltageToDACBits(toggle*2.5, dacNumber= 0))) #for DAC0
+            time.sleep(delay)
+            c += 1
+        Close()
 
     def read_calibration(self, port_objects, step, dac_set):
         """

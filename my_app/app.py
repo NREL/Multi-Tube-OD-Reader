@@ -4,19 +4,18 @@ from shiny import App, Inputs, Outputs, Session, reactive, render, ui, req
 from Configure_hardware import configure_ui, configure_server
 from reconfiguring_setup_new_run import setup_ui, setup_server
 from accordion_plots_module import accordion_plot_ui, accordion_plot_server
-from sampling import make_usage_status_pickle, make_current_runs_pickle, valid_sn, connected_device
 from timecourse import CONFIG_PATH
 import os
-import sys
-from Device import load_pickle, save_pickle, search_for_new_hardware
+from Experiment import Experiment
+from Port import Port
 
-
+#need to add an option within the app to update/reload a dead pickle
 
 if os.path.isfile(CONFIG_PATH):
     pass
 else:
-    hardware = search_for_new_hardware()
-    save_pickle(CONFIG_PATH, [hardware,[],[]])
+    Experiment.reconcile_pickle()
+    
 
 app_ui = ui.page_navbar(
     theme.materia(),
@@ -25,9 +24,10 @@ app_ui = ui.page_navbar(
         ui.layout_sidebar( 
             ui.sidebar(
                 ui.input_action_button("new_experiment", "New Experiment", width = '200px'),
+                ui.input_action_button("reset_app", "Reset", width = '200px'),
                 ui.input_action_button("close_app", "Close App", width = '200px'),
-                ui.output_text("running_pickles"),
-                ui.output_text("status_pickle"),                
+                ui.output_text("trouble_1"),
+                ui.output_text("trouble_2"),                
             ),
             ui.output_ui("running_experiments"),
         ),
@@ -54,35 +54,33 @@ app_ui = ui.page_navbar(
 
 def server(input: Inputs, output: Outputs, session: Session):
 
-    @reactive.file_reader(CONFIG_PATH, priority=-1)
-    def CONFIG():
-        return load_pickle(CONFIG_PATH)
+    #reconcile on on start up, 
+    # will reconcile everytime we add_to_pickle/remove_from_pickle
+    Experiment.reconcile_pickle()
 
-    @reactive.calc
-    def DEVICES():
-        return CONFIG()[0]
-    
-    @reactive.calc
-    def CURRENT_RUNS():
-        return CONFIG()[1]
+    @reactive.file_reader(CONFIG_PATH)
+    def pickle():
+        return Experiment.all
     
     #configure hardware
     configure_server("config")
 
     #setup new run
-    setup_complete = setup_server("setup", DEVICES)        
+    setup_complete = setup_server("setup", input.front_page)        
 
     counter = reactive.Value(0)
 
     @reactive.effect
-    @reactive.event(CURRENT_RUNS) 
+    @reactive.event(pickle) 
     def _():
         server_list =[]
         ui_list = []
-        for timecourse in CURRENT_RUNS():
-            server_list.append(accordion_plot_server(f"{timecourse.name}_{counter()}", list))
-            ui_list.append(accordion_plot_ui(f"{timecourse.name}_{counter()}", timecourse.name))
+        for experiment in Experiment.all:
+            name = experiment.name.replace(" ", "_")
+            server_list.append(accordion_plot_server(f"{name}_{counter()}", experiment))
+            ui_list.append(accordion_plot_ui(f"{name}_{counter()}", name))
         counter.set(counter() +1) #creates new names for modules. reusing old names causes problems.
+        
         @output
         @render.ui
         def running_experiments():
@@ -91,9 +89,24 @@ def server(input: Inputs, output: Outputs, session: Session):
 
     @output
     @render.text
-    def running_pickles():
-        req(CURRENT_RUNS())
-        return [vars(x) for x in CURRENT_RUNS()]
+    def trouble_1():
+        pickle()
+        try:
+            printout1 = []
+            for x in Experiment.all:
+                printout1 = printout1 + [x.name]
+            printout2 = str([p.position for p in Port.all])
+            printout3 = str([p.usage for p in Port.all])
+    
+        except:
+            printout = "no experiments yet"
+        return "One:\n" + str(printout1) + "\nTWO:\n" + printout2+ "\nThree:\n" + printout3
+     
+    @output
+    @render.text
+    def trouble_2():
+        Experiment.all
+        return 
     
     @output
     @render.ui
@@ -102,22 +115,20 @@ def server(input: Inputs, output: Outputs, session: Session):
             ui.markdown(
                 """
                 ### What usually goes wrong:
-                If there's not option for "Number fo Growth Tubes" for your new run, the device is either disconnected or busy taking meaurements. Retry later\n
-                Trying to take two readings simultaneously (mulitple, high frequency runs) can crash the software.\n
+                Trying to read two experiments on the same device at the same time
+                will lead to problems where one or both experiments will quit. \n\n
 
-                ### Steps to Try: 
+                ### Other troubleshooting tips:
                 ##### Restart the app
-                This won't stop current runs.\n
+                This shouldn't stop current runs.\n\n
                 
                 ##### Disconnect and reconnect the device(s).
-                This may stop current runs.\n
+                This may stop current runs.\n\n
                 
-                ##### Delete the two ".pickle" files.
-                - Current_runs.pickle
-                - Usage_status.pickle\n
-                They are in the same folder as the app, near where the output files are stored.\n
-                This will stop current runs at the next time point.
-                                  
+                ##### Delete the "config.dat" file and restart.
+                It's in the same folder where the files are stored (or close by).
+                This will stop current runs.\n\n
+                
                 ### Contact:
                 Let me know if things go wrong or what features you'd like to be added.\n
                 shebdon@nrel.gov
@@ -144,5 +155,10 @@ def server(input: Inputs, output: Outputs, session: Session):
     async def _():
         await session.close()
         #how to close the terminal when the browser closes?
+
+    @reactive.Effect
+    @reactive.event(input.reset_app)
+    def _():
+        Experiment.reconcile_pickle()
 
 app = App(app_ui, server)
