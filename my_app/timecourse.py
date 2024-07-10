@@ -26,8 +26,6 @@ elif __file__:
 #path to pickle for confirming run is still active
 CONFIG_PATH = os.path.join(application_path, "config.dat")
 
-
-
 def retry(max_retries, wait_time):
     """
     Decorator to retry a function if it throws an exception
@@ -127,7 +125,7 @@ def lists_to_dictlist(keys, values):
 
 def append_list_to_tsv(input:list, file):
     input = (str(x) for x in input)
-    with open(file, "a+") as f:
+    with open(file, "a+") as f: # "a+" will append or write file
         f.write("\t".join(input))
         f.write("\n")
 """
@@ -164,54 +162,60 @@ def kill_switch(pickle_path, output_file):
         sys.exit()
     """
 
+def per_iteration(file, test, ref_port, ref_device, starttime, interval ):
+    try:
+        #check kill switch
+        #append_list_to_tsv creates missing file
+        #must check kill switch first if file deletion/rename/move is a kill switch
+        kill_switch(CONFIG_PATH, file)
 
+        new_OD= get_measurement_row(test, ref_port, ref_device, starttime)
+        #new_OD = voltage_to_OD(ref_voltage_t_zero, t_zero_voltages, new_row)
+        append_list_to_tsv(new_OD, file)
+        
+        #reset
+        failures = 0
+        
+        #wait remainder of interval until next read
+        time.sleep(interval - (time.monotonic()-starttime) % interval)
+
+    except Exception as e:
+        failures += 1
+        
+        append_list_to_tsv([f"#{e}"], file) #save exception as commented out line in file
+        
+        if failures >= 4:
+            append_list_to_tsv(["#Stopping timecourse due to failures"], file)
+            sys.exit()
+        
+        time.sleep(2.3)
+
+def collect_header(path):
+    with open(path, "r") as f:
+        #read first six lines (0 through 5)
+        lines = f.readlines()[0:6]
+    info, device_names, device_ids, ports, usages, t_zero_voltages = [line.split("\t")[1:] for line in lines]
+    name, interval = info[0:2]
+    interval = float(interval)*60
+    ref_voltage_t_zero = t_zero_voltages.pop(0)
+    ref_device = device_ids.pop(0)
+    ref_port = ports.pop(0)
+    return [name, interval, ref_voltage_t_zero, ref_device, ref_port, device_ids, ports, usages]
 
 ################################# MAIN ######################################################
 if __name__ == "__main__":
     #path to ouput data file
     file = resource_path(sys.argv[1])
     
-    #collect header info
-    with open(file, "r") as f:
-        lines = f.readlines()[0:6]
-        #split by delimiter, remove left item in table
-    info, device_names, device_ids, ports, usages, t_zero_voltages = [line.split("\t")[1:] for line in lines]
-    experiment_name, interval = info
-    interval = float(interval)*60
-    ref_voltage_t_zero = t_zero_voltages.pop(0)
-    ref_device = device_ids.pop(0)
-    ref_port = ports.pop(0)
     starttime = time.monotonic()
+    name, interval, ref_voltage_t_zero, ref_device, ref_port, device_ids, ports, usages= collect_header(file)
     test = lists_to_dictlist(device_ids, ports)
 
     #print start time to header
-    append_list_to_tsv([f"#{time.asctime()}"], file)
+    append_list_to_tsv([f"#Start Time:\t{time.asctime()}"], file)
 
     failures = 0 #track consecutive failed iterations
     while True:
-        try:
-            #check kill switch
-            #append_list_to_tsv creates missing file
-            #must check kill switch first if file deletion/rename/move is a kill switch
-            kill_switch(CONFIG_PATH, file)
-
-            new_OD= get_measurement_row(test, ref_port, ref_device, starttime)
-            #new_OD = voltage_to_OD(ref_voltage_t_zero, t_zero_voltages, new_row)
-            append_list_to_tsv(new_OD, file)
-            
-            #reset
-            failures = 0
-            
-            #wait remainder of interval until next read
-            time.sleep(interval - (time.monotonic()-starttime) % interval)
-
-        except Exception as e:
-            failures += 1
-            
-            append_list_to_tsv([f"#{e}"], file) #save exception as commented out line in file
-            
-            if failures >= 4:
-                append_list_to_tsv(["#Stopping timecourse due to failures"], file)
-                sys.exit()
-            
-            time.sleep(2.3)
+        per_iteration(file = file, test = test,
+                      ref_port = ref_port, ref_device = ref_device,
+                      starttime = starttime, interval = interval)
