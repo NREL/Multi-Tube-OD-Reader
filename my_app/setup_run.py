@@ -203,6 +203,7 @@ def setup_server(input, output, session, main_navs):
     @render.text
     def ports_used_text():
         req(input.new_ref_port())
+        req(ref_port())
         header = "Place growth tubes in the following ports:"
         ref = ' '.join(["\nMake sure that port", str(ref_port().position), "in", ref_port().device.name, "is empty!"])
         lines = [f"Port {port.position} in {port.device.name}" for port in assigned_test_ports()] 
