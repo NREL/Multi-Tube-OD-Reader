@@ -1,13 +1,13 @@
 from LabJackPython import Close
 from shinyswatch import theme
 from shiny import App, Inputs, Outputs, Session, reactive, render, ui, req
-from Configure_hardware import configure_ui, configure_server
+from configure_hardware import configure_ui, configure_server
 from reconfiguring_setup_new_run import setup_ui, setup_server
 from accordion_plots_module import accordion_plot_ui, accordion_plot_server
 from timecourse import CONFIG_PATH
 import os
-from Experiment import Experiment
-from Port import Port
+from experiment import Experiment
+from port import Port
 
 #need to add an option within the app to update/reload a dead pickle
 
