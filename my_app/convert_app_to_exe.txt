@@ -1,11 +1,11 @@
 cd "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/"
 pyinstaller --noconfirm --onefile --console --name "Multitube_OD_0.2.1" `
---add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/accordion_plots_module.py;." `
+--add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/display_runs.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/app.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/configure_hardware.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/device.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/experiment.py;." `
---add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/numeric_module.py;." `
+--add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/forced_numeric.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/port.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/growth_analysis.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/setup_run.py;." `
