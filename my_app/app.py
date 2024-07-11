@@ -1,13 +1,13 @@
-from LabJackPython import Close
 from shinyswatch import theme
 from shiny import App, Inputs, Outputs, Session, reactive, render, ui, req
 from configure_hardware import configure_ui, configure_server
-from reconfiguring_setup_new_run import setup_ui, setup_server
+from setup_run import setup_ui, setup_server
 from accordion_plots_module import accordion_plot_ui, accordion_plot_server
 from timecourse import CONFIG_PATH
-import os
 from experiment import Experiment
-from port import Port
+#from growth_analysis import analysis_ui, analysis_server
+import os
+import signal
 
 #need to add an option within the app to update/reload a dead pickle
 
@@ -24,8 +24,6 @@ app_ui = ui.page_navbar(
         ui.layout_sidebar( 
             ui.sidebar(
                 ui.input_action_button("new_experiment", "New Experiment", width = '200px'),
-                ui.input_action_button("reset_app", "Reset", width = '200px'),
-                ui.input_action_button("close_app", "Close App", width = '200px'),
                 ui.output_text("trouble_1"),
                 ui.output_text("trouble_2"),                
             ),
@@ -35,7 +33,6 @@ app_ui = ui.page_navbar(
     ),
     ui.nav_panel(
        "Start New Run",
-        #hidden_tabs_ui("test"),
         setup_ui("setup"),
         value = "new_experiment"
     ),
@@ -46,7 +43,6 @@ app_ui = ui.page_navbar(
     ui.nav_panel(
         "When things go wrong",
         ui.output_ui("gone_wrong"),
-
     ),
     title="MultiTubeOD",
     id = "front_page" 
@@ -59,7 +55,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     Experiment.reconcile_pickle()
 
     @reactive.file_reader(CONFIG_PATH)
-    def pickle():
+    def config_file():
         return Experiment.all
     
     #configure hardware
@@ -68,10 +64,12 @@ def server(input: Inputs, output: Outputs, session: Session):
     #setup new run
     setup_complete = setup_server("setup", input.front_page)        
 
+   # return_home = analysis_server("analysis")
+
     counter = reactive.Value(0)
 
     @reactive.effect
-    @reactive.event(pickle) 
+    @reactive.event(config_file) 
     def _():
         server_list =[]
         ui_list = []
@@ -90,18 +88,8 @@ def server(input: Inputs, output: Outputs, session: Session):
     @output
     @render.text
     def trouble_1():
-        pickle()
-        try:
-            printout1 = []
-            for x in Experiment.all:
-                printout1 = printout1 + [x.name]
-            printout2 = str([p.position for p in Port.all])
-            printout3 = str([p.usage for p in Port.all])
+        return 
     
-        except:
-            printout = "no experiments yet"
-        return "One:\n" + str(printout1) + "\nTWO:\n" + printout2+ "\nThree:\n" + printout3
-     
     @output
     @render.text
     def trouble_2():
@@ -119,15 +107,15 @@ def server(input: Inputs, output: Outputs, session: Session):
                 will lead to problems where one or both experiments will quit. \n\n
 
                 ### Other troubleshooting tips:
-                ##### Restart the app
+                ##### Restart or reset the app
                 This shouldn't stop current runs.\n\n
                 
                 ##### Disconnect and reconnect the device(s).
-                This may stop current runs.\n\n
+                This may stop current runs that are actively taking measurments.\n\n
                 
                 ##### Delete the "config.dat" file and restart.
-                It's in the same folder where the files are stored (or close by).
-                This will stop current runs.\n\n
+                This will stop current runs.
+                It's in the same folder where the files are stored (or close by).\n\n
                 
                 ### Contact:
                 Let me know if things go wrong or what features you'd like to be added.\n
@@ -145,20 +133,36 @@ def server(input: Inputs, output: Outputs, session: Session):
     def _():
         ui.update_navs("front_page", selected = "home")
 
+    """    
+    @reactive.effect
+    @reactive.event(return_home)
+    def _():
+        ui.update_navs("front_page", selected = "home")
+    """
+
+
     @reactive.effect
     @reactive.event(input.new_experiment)
     def _():
         ui.update_navs("front_page", selected = "new_experiment") 
 
-    @reactive.Effect
-    @reactive.event(input.close_app)
-    async def _():
-        await session.close()
-        #how to close the terminal when the browser closes?
 
     @reactive.Effect
-    @reactive.event(input.reset_app)
-    def _():
-        Experiment.reconcile_pickle()
+    @reactive.event(input.close_app, ignore_init= True, ignore_none= True)
+    async def _():
+        await session.close()
+        await session.app.stop()
+    
+   
+    @reactive.Effect
+    @reactive.event(input.close_app, ignore_init= True, ignore_none= True)
+    async def _():
+        await session.close()
+        await session.app.stop()
+    
+    def kill_server():
+        os.kill(os.getpid(), signal.SIGTERM)
+
+    session.on_ended(kill_server)
 
 app = App(app_ui, server)

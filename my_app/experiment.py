@@ -4,7 +4,6 @@ from timecourse import measure_voltage, CONFIG_PATH, append_list_to_tsv, resourc
 from time import sleep
 import os
 import dill as pickle
-import numpy as np
 import logging
 import subprocess
 logger = logging.getLogger(__name__)
@@ -88,54 +87,6 @@ class Experiment:
             pickle.dump(local_pickle, f, pickle.HIGHEST_PROTOCOL)
         Experiment.reconcile_pickle()
 
-    @staticmethod
-    def reconcile_pickle():
-        """
-        Used to update the inventory of connected devices and running experiments
-        as kept in the pickled dictionary. 
-        Device.discovery populates Device.all with all connected hardware
-        """
-
-        pickled_experiments = Experiment.load_pickle()["Experiments"]
-        # selectively merge non-duplicate objects.
-        # nested loops work your way down experiments, devices, objects 
-        # preference given to Experiment.all list
-        # list(set( [a] + [b] )) shows no preference
-        # keyword "in" uses any of "==", "is", "__eq__", etc
-
-        #collect missing, non-equivalent experiments (if any)
-        for e in pickled_experiments:
-            if e not in Experiment.all:
-                Experiment.all.append(e)
-
-        #remove terminated experiments (if any)
-        for e in Experiment.all:
-            if e not in pickled_experiments:
-                Experiment.all.remove(e)
-                continue #move on, done deleting old experiment
-            
-            for p in e.all_ports:
-                if p.device not in Device.all:
-                    Device.all.append(p.device)
-                    continue # move on, done adding new device/port
-                
-                # since device is not new,
-                # if it's identical move on
-                known_device = [d for d in Device.all if d == p.device].pop(0)
-                if known_device is p.device:
-                    continue
-                # since device is not identical
-                # store port in known device
-                # and update which device the port belongs to
-                known_device.ports[p.position - 1] = p
-                p.device = known_device
-
-        Device.discovery()
-
-        Port.all = []
-        for d in Device.all:
-            Port.all.extend(*[d.ports])
-
     def record_usage(self):
         for p in self.test_ports:
             p.users.append(self.name)
@@ -181,3 +132,53 @@ class Experiment:
             return(f"{self.name} successfully completed.")
         except:
             return("Cant find the PID, it must have already stopped")
+    
+    @staticmethod   
+    def reconcile_pickle():
+        """
+        Used to update the inventory of connected devices and running experiments
+        as kept in the pickled dictionary. 
+        Device.discovery populates Device.all with all connected hardware
+        """
+
+        pickled_experiments = Experiment.load_pickle()["Experiments"]
+        # selectively merge non-duplicate objects.
+        # nested loops work your way down experiments, devices, objects 
+        # preference given to Experiment.all list
+        # list(set( [a] + [b] )) shows no preference
+        # keyword "in" uses any of "==", "is", "__eq__", etc
+        
+        Device.all = []
+
+        Device.discovery()
+        
+        #collect missing, non-equivalent experiments (if any)
+        for e in pickled_experiments:
+            if e not in Experiment.all:
+                Experiment.all.append(e)
+
+        #remove terminated experiments (if any)
+        for e in Experiment.all:
+            if e not in pickled_experiments:
+                Experiment.all.remove(e)
+                continue #move on, done deleting old experiment
+            
+            for p in e.all_ports:
+                if p.device not in Device.all:
+                    Device.all.append(p.device)
+                    continue # move on, done adding new device/port
+                
+                # since device is not new,
+                # if it's identical move on
+                known_device = [d for d in Device.all if d == p.device].pop(0)
+                if known_device is p.device:
+                    continue
+                # since device is not identical
+                # store port in known device
+                # and update which device the port belongs to
+                known_device.ports[p.position - 1] = p
+                p.device = known_device
+
+        Port.all = []
+        for d in Device.all:
+            Port.all.extend(*[d.ports])

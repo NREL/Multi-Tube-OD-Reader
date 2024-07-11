@@ -1,7 +1,7 @@
 
 from LabJackPython import Close
 from port import Port
-from timecourse import measure_voltage
+from timecourse import measure_voltage, retry
 import u3
 import time
 import logging
@@ -26,6 +26,7 @@ class Device():
         return hash(self.sn)
 
     @staticmethod
+    @retry(3,1)
     def discovery(reset = False):
         """
         call with Device.discovery() to create Device objects for each OD reader
