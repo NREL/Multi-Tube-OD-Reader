@@ -1,9 +1,7 @@
 from shiny import module, ui, reactive, render, req, Inputs, Outputs, Session
-from sampling import make_plot
-import statistics
+from sampling import melted_df_to_plot, growth_rates
 import pandas
 import logging
-import math
 from copy import deepcopy
 
 logging.getLogger().setLevel(logging.INFO)
@@ -39,37 +37,44 @@ def analysis_ui():
         )
 
     tab_titles = ["select_file", 
+                "raw_figure",
                 "assign_replicates", 
                 "model_fitting",
                 ]
 
     tab_headings = ["Select a File",
+                    "Data for Individual Tubes",
                     "Group by Replicates",
                     "Fit Growth Parameters",
                     ]
     
     tab_subheadings = ["Select a '.tsv' file.",
+                    "Save the image, or press continue to group similar replicates",
                     "Select a group of replicate ports and assign a name to them.",
                     "Click and drag over the figure to choose the region to model.",
                     ]
 
     tab_cancel_labels = ["Home",
+                    "Cancel", 
                     "Cancel",
                     "Cancel",
                     ]
 
     tab_commit_labels = ["Next",
+                    "Continue",
                     "Next",
                     "Save", 
                     ]
 
-    tab_ui_elements = [[ui.input_file("data_file", label = "Select a Data File", accept = ".tsv"),
-                        
+    tab_ui_elements = [ [ui.input_file("data_file", label = "Select a Data File", accept = ".tsv"), 
+                            ],
+                        [ui.output_plot("plot", brush = True),
+                            ui.output_table("growth_parameter_table")
                             ],
                         [ui.output_ui("show_replicate_options"),
                          ui.input_text("replica_group_name", "Group Name:"),
                             ],
-                        [ui.output_plot("plot1", brush = True),
+                        [ui.output_plot("plot", brush = True),
                          ui.output_table("growth_parameter_table"),
                             ],
                         ]
@@ -173,16 +178,25 @@ def analysis_server(input, output, session):
     defined_replicate_groups = reactive.Value({})
 
     @reactive.calc
-    def data():
+    def full_data():
         logging.debug("wtf is happening here")
-        worked = pandas.read_csv(input.data_file()[0]["datapath"], delimiter = "\t",header = 4, comment = "#")
-        logging.debug("we can make file")
-        return worked
+        df = pandas.read_csv(input.data_file()[0]["datapath"], delimiter = "\t",header = 4, comment = "#")
+        return df
+
+    @reactive.calc
+    def data():
+        req(full_data())
+        return full_data().drop(columns = "Temperature")
     
+    @reactive.calc
+    def temperature_data():
+        req(full_data())
+        return full_data()["Time (min)", "Temperature"]
+
     @reactive.calc
     def replicate_options():
         req(defined_replicate_groups)        
-        all_options = list(data().columns)[2:] #slice away time/temp columns 0 and 1
+        all_options = list(data().columns)[1:] #slice away temp columns 0
         logging.debug(" replicate options function 1: %s", defined_replicate_groups().values())
         for used_options_list in defined_replicate_groups().values():
             print(used_options_list)
@@ -197,113 +211,33 @@ def analysis_server(input, output, session):
     def show_replicate_options():
         req(replicate_options())
         return ui.input_checkbox_group("show_replicate_options", "Mark the Replicate Tubes", choices = replicate_options(), inline = True)
-    
+
     @reactive.calc
-    def results():
-        #refactor dataframe for easy drawing, assign replicate names to all tubes
-        df = data()
-        df = df.drop(columns = "Temperature") 
-        col_names = df.columns
-        time_axis = df.iloc[:, :1] #return first column as df
-        group_names = []
-        growth_rates = []
-        r_squared_values = []
-        rename_dict = {}
-        summary_df = time_axis #average & stdev of all replicates in group
+    def brushed_index_range():
+        req(input.plot_brush())
+        req(data())
+        dump = input.plot_brush()
+        x_axis= data()["Time (min)"]
+        start_index = int(x_axis.loc[x_axis <= dump["xmin"] ].idxmax())
+        end_index = int(x_axis.loc[x_axis >= dump["xmax"] ].idxmin())
+        logging.debug("user defined range: %s to %s", start_index, end_index)
+        return start_index, end_index
+
+    @output
+    @render.plot
+    def plot():
+        df = data().melt(id_vars = ["Time (min)"] )
         
-        #process user-defined range of x (time) values 
-        try:
-            if user_defined_range():
-                time_min, time_max = user_defined_range()
-            else:
-                time_min, time_max = (time_axis.min(), time_axis.max())
-        except:
-            time_min, time_max = (time_axis.values.min(), time_axis.values.max())
-        logging.info("xmin and xmax have values %s and %s", time_min, time_max)
-
-        start_index = int(time_axis.loc[df[col_names[0]] <= time_min].idxmax())
-        end_index = int(time_axis.loc[df[col_names[0]] >= time_max].idxmin())
-        ln_transformed_df = time_axis.iloc[start_index:end_index, :1]
-        logging.info("initiated state of ln_transformed_df ", ln_transformed_df)
-
-        for group_name, columns in defined_replicate_groups().items():
-            logging.debug("columns are: %s", columns)
-
-            #average groups of replicate tubes 
-            pandas_mean = df[columns].mean(axis = 1)
-            pandas_mean.name = f"{group_name}_mean"
-            logging.debug('done finding mean of %s', group_name)
-            
-            #stdev gropus of replicate tubes
-            pandas_std = df[columns].std(axis =1)
-            pandas_std.name = f"{group_name}_std"
-            logging.debug('done finding StDev of %s', group_name)
-
-            #collect avg and stdev of full timecourse
-            summary_df.merge(pandas_mean, left_index = True, right_index = True)
-            summary_df.merge(pandas_std, left_index = True, right_index = True)
-            logging.debug('done merging mean and stdev into df')
-            
-            #for each individual tube
-            for col in columns:
-                #poplulate renaming dict to rename later
-                rename_dict[col] = group_name
-
-            skip_regression = False
-            #for each individual tube, but isolated from prev. loop in case exception kills it.
-            for col in columns:
-                #natural log transform and model fit the user-defined subset (intended to be log phase)
-                try:
-                    skip_regression = False
-                    ln_transformed = df[col].iloc[start_index:end_index].apply(math.log)
-                    ln_transformed_df.merge(ln_transformed, left_index = True, right_index = True)
-                except ValueError as ve:
-                    print("Cannot perform linear regression. Probably have negative ODs that have undefined natural log.")
-                    group_names = ['Problem with Linear Regression']
-                    growth_rates = ['Select rage with non-negative ODs']
-                    r_squared_values = ['Only the width of the box matters']
-                    skip_regression = True
-                    break
-            logging.info("final state of ln_tranformed_df: %s", ln_transformed_df)
-            logging.info("skip_regression value: %s", skip_regression)
-            if not skip_regression:
-                slope, intercept = statistics.linear_regression(ln_transformed_df[col_names[0]], ln_transformed_df[columns])
-                ln_transformed_df[f"{col}_fit_line"] = ln_transformed_df[col_names[0]]*slope + intercept
-                growth_rates.append(slope)
-                group_names.append(group_name)
-                r_squared_values.append(round(statistics.correlation(ln_transformed_df[col_names[0]], list(ln_transformed.values)), 4))
-        logging.debug(" rename dict: %s ", rename_dict)
-        df.rename(columns=rename_dict, inplace=True) #force duplicate names so make_plot averages them.
-        logging.debug('render plot1 renamed df head - {}'.format(df.head().to_string()))
-        parameter_df = pandas.DataFrame({'Experiment':group_names, 'Specific Growth Rate': growth_rates, 'R squared':r_squared_values})
-        return df, ln_transformed_df, parameter_df, summary_df
-
-    @reactive.calc
-    def user_defined_range():
-        req(input.plot1_brush())
-        dump = input.plot1_brush()
-        brushed_range = (dump["xmin"], dump["xmax"])
-        logging.debug("user defined range: %s to %s", brushed_range[0], brushed_range[1])
-        return brushed_range 
-
-    @output
-    @render.plot
-    def plot1():
-        req(results())
-        return make_plot(results()[0])
-
-    
-    @output
-    @render.plot
-    def fitted_plot():
-
-        return 
+        #require something before using df.replace() to replace individual names with group names, this activates grouped figure
+        return melted_df_to_plot(df)
     
     @output
     @render.table
     def growth_parameter_table():
-       req(results())
-       return results()[2] 
+        df = growth_rates(data())
+        #require something before calculating average and std of rates
+        #maybe melt then df.replace, then aggregate as in melted_df_to_plot
+        return df
 
     @output
     @render.text
