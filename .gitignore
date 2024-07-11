@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 
 Sampling.py
 2024 Q1 Hebdon Micrbl Grwth Msrmt.docx
@@ -62,3 +63,72 @@ Sampling.py
 /my_app/build
 Parallel OD reader.docx
 *.dat
+=======
+
+Sampling.py
+2024 Q1 Hebdon Micrbl Grwth Msrmt.docx
+2024 SEED LDRD Project Plan multi-TubeOD reader_kc.docx
+3181-00-00.pdf
+__pycache__/app.cpython-39.pyc
+__pycache__/Configure_hardware.cpython-39.pyc
+__pycache__/numeric_module.cpython-39.pyc
+__pycache__/plotly_streaming.cpython-39.pyc
+__pycache__/scoredata.cpython-39.pyc
+Book1 (version 1).xlsx
+Current_runs.pickle
+Design
+fmicb-12-790576 (1).pdf
+FY24 Hebdon Microbial Growth Measurement Seed Letter (003).docx
+LabJack-U3-Datasheet.pdf
+LabJack_config/__pycache__/u3allio.cpython-39.pyc
+LabJack_config/data_0.tsv
+LabJack_config/data_1.dat
+LabJack_config/LJLogUD.cfg
+LabJack_config/LJLogUD_open.cfg
+LabJack_config/u3allio.py
+LabJack_config/u3Noise.py
+LDRD Assessment Report Q1.docx
+LDRD Assessment Report Q2.doc
+LDRD Assessment Report.doc
+my_app/__pycache__/accordion_plots_module.cpython-312.pyc
+my_app/__pycache__/accordion_plots_module.cpython-39.pyc
+my_app/__pycache__/app.cpython-312.pyc
+my_app/__pycache__/app.cpython-39.pyc
+my_app/__pycache__/Configure_hardware.cpython-312.pyc
+my_app/__pycache__/Configure_hardware.cpython-39.pyc
+my_app/__pycache__/hidden_navigation_module.cpython-39.pyc
+my_app/__pycache__/numeric_module.cpython-312.pyc
+my_app/__pycache__/numeric_module.cpython-39.pyc
+my_app/__pycache__/OD_reader_run.cpython-39.pyc
+my_app/__pycache__/sampling.cpython-312.pyc
+my_app/__pycache__/sampling.cpython-39.pyc
+my_app/__pycache__/setup_new_run.cpython-312.pyc
+my_app/__pycache__/setup_new_run.cpython-39.pyc
+my_app/__pycache__/test_module.cpython-39.pyc
+sandbox/__pycache__/accordion_nav_only.cpython-312.pyc
+sandbox/__pycache__/app.cpython-312.pyc
+sandbox/accordion_nav_only.py
+sandbox/app.py
+Sampling.py
+Sampling.py
+Prototyping multi-tube turbidity reader.msg
+my_app/hidden_navigation_module.py
+my_app/subrpocess_test.py
+my_app/test.py
+*.pickle
+*.xlsx
+shiny_example.py
+*.pptx
+*.tsv
+shiny_example.py
+Sampling.py
+*.png
+*.jpg
+*.spec
+/my_app/__pycache__
+/my_app/build
+Parallel OD reader.docx
+/my_app/dist
+*.exe
+my_app/config.dat
+>>>>>>> origin/main
