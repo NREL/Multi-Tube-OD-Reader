@@ -4,7 +4,7 @@ import os
 from device import Device
 from port import Port
 from experiment import Experiment
-from timecourse import resource_path
+import sys
 
 def bad_name(st): 
     '''Returns False if string contains character other than space, underscore or alphanumeric'''
@@ -212,8 +212,12 @@ def setup_server(input, output, session, main_navs):
         return "\n".join(lines)
     
     @reactive.calc
-    def file_path():
-        return resource_path(input.experiment_name() + ".tsv")
+    def file_path():#Get path to current directory
+        if getattr(sys, 'frozen', False):
+            application_path = os.path.dirname(sys.executable)
+        elif __file__:
+            application_path = os.path.dirname(__file__)
+        return os.path.join(application_path, input.experiment_name() + ".tsv")
     
     @reactive.Effect
     @reactive.event(file_path)
