@@ -63,3 +63,4 @@ Parallel OD reader.docx
 /my_app/dist
 *.exe
 *.dat
+*.svg
