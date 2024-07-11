@@ -2,9 +2,9 @@ from shiny import module, ui, reactive, render, req, Inputs, Outputs, Session
 from LabJackPython import Close
 from numeric_module import controlled_numeric_server, controlled_numeric_ui
 import os
-from Device import Device
-from Port import Port
-from Experiment import Experiment
+from device import Device
+from port import Port
+from experiment import Experiment
 from timecourse import resource_path
 
 def bad_name(st): 
