@@ -1,5 +1,5 @@
 from shiny import module, ui, reactive, render, req
-from Device import Device
+from device import Device
 
 @module.ui 
 def configure_ui():
