@@ -159,7 +159,10 @@ def setup_server(input, output, session, main_navs):
         input.commit_start()
         input.cancel_start()
         input.cancel_setup()
-        choices = list(set([port.device.name for port in possible_ref_ports()]))
+        choices = []
+        for port in possible_ref_ports():
+            if port.device.name not in choices:
+                choices.append(port.device.name)
         return ui.input_radio_buttons("chosen_ref_device", "Choose a Reference Device", choices, selected = None)
 
     @output
