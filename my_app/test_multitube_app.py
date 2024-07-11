@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
-from Device import Device
-from Experiment import Experiment
-from Port import Port
+from device import Device
+from experiment import Experiment
+from port import Port
 from timecourse import CONFIG_PATH, resource_path, measure_temp, measure_voltage, per_iteration
 from timecourse import get_measurement_row, append_list_to_tsv, kill_switch, lists_to_dictlist
 import timecourse
