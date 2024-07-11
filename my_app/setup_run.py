@@ -238,10 +238,10 @@ def setup_server(input, output, session, main_navs):
     @reactive.Effect
     @reactive.event(input.commit_setup)
     def _():
-        if input.experiment_name() == "":
+        if input.experiment_name() == "" or bad_name(input.experiment_name()):
             no_name = ui.modal(
-                "Please enter an experiment name before continuing.",
-                title="Must assign a name",
+                "Please enter an valid name before continuing.",
+                title="Missing or invalid name",
                 easy_close=True,
                 footer=None,
             )
