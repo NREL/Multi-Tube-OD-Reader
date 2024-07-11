@@ -6,6 +6,7 @@ import os
 import statistics
 import u3
 
+config_file = "config.dat"
 
 def resource_path(relative_path):
     """ Get path to resource, works for dev and for PyInstaller """
@@ -23,8 +24,9 @@ if getattr(sys, 'frozen', False):
 elif __file__:
     application_path = os.path.dirname(__file__)
 
-#path to pickle for confirming run is still active
-CONFIG_PATH = os.path.join(application_path, "config.dat")
+#path to pass to the resf of the app, adjusted for frozen, vs active.
+#this timecourse script works with just the file name, path is already correct somehow.
+CONFIG_PATH = os.path.join(application_path, config_file)
 
 def retry(max_retries, wait_time):
     """
@@ -167,7 +169,7 @@ def per_iteration(file, test, ref_port, ref_device, starttime, interval ):
         #check kill switch
         #append_list_to_tsv creates missing file
         #must check kill switch first if file deletion/rename/move is a kill switch
-        kill_switch(CONFIG_PATH, file)
+        kill_switch(config_file, file)
 
         new_OD= get_measurement_row(test, ref_port, ref_device, starttime)
         #new_OD = voltage_to_OD(ref_voltage_t_zero, t_zero_voltages, new_row)
@@ -205,8 +207,9 @@ def collect_header(path):
 ################################# MAIN ######################################################
 if __name__ == "__main__":
     #path to ouput data file
-    file = resource_path(sys.argv[1])
-    
+    file = sys.argv[1]
+
+
     starttime = time.monotonic()
     name, interval, ref_voltage_t_zero, ref_device, ref_port, device_ids, ports, usages= collect_header(file)
     test = lists_to_dictlist(device_ids, ports)
