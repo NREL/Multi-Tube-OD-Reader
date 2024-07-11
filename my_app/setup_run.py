@@ -192,10 +192,12 @@ def setup_server(input, output, session, main_navs):
         req(input.chosen_ref_port())
         ref_device = input.chosen_ref_device()
         ref_pos = input.chosen_ref_port()
-        print(ref_device, ref_pos)
-        print([(p.device.name, p.position, p.usage) for p in possible_ref_ports()])
-        p = [p for p in possible_ref_ports() if p.device.name == ref_device if int(p.position) == int(ref_pos)].pop(0)
-        return p
+        p = [p for p in possible_ref_ports() if p.device.name == ref_device if int(p.position) == int(ref_pos)]
+        try:
+            output = p.pop(0)
+        except:
+            output = None
+        return output
 
     @output
     @render.text
