@@ -74,6 +74,9 @@ def server(input: Inputs, output: Outputs, session: Session):
         server_list =[]
         ui_list = []
         for experiment in Experiment.all:
+            if not os.path.exists(experiment.path):
+                experiment.stop_experiment()
+                continue #move on after removing dead experiment.
             name = experiment.name.replace(" ", "_")
             server_list.append(accordion_plot_server(f"{name}_{counter()}", experiment))
             ui_list.append(accordion_plot_ui(f"{name}_{counter()}", name))
