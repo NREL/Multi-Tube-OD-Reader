@@ -10,6 +10,7 @@ pyinstaller --noconfirm --onefile --console --name "Multitube_OD_0.2.1" `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/growth_analysis.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/setup_run.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/timecourse.py;." `
+--add-data "C:/Users/shebdon/AppData/Local/Programs/Python/Python312/Lib/site-packages/dill;dill/" `
 --add-data "C:/Users/shebdon/AppData/Local/Programs/Python/Python312/Lib/site-packages/u3.py;." `
 --add-data "C:/Users/shebdon/AppData/Local/Programs/Python/Python312/Lib/site-packages/Modbus.py;." `
 --add-data "C:/Users/shebdon/AppData/Local/Programs/Python/Python312/Lib/site-packages/LabJackPython.py;." `
@@ -17,3 +18,4 @@ pyinstaller --noconfirm --onefile --console --name "Multitube_OD_0.2.1" `
 --add-data "C:/Users/shebdon/AppData/Local/Programs/Python/Python312/Lib/site-packages/shinyswatch;shinyswatch/"  `
 "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/launch_exe.py" `
 --clean
+
