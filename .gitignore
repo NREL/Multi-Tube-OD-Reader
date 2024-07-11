@@ -1,4 +1,3 @@
-
 Sampling.py
 2024 Q1 Hebdon Micrbl Grwth Msrmt.docx
 2024 SEED LDRD Project Plan multi-TubeOD reader_kc.docx
@@ -48,7 +47,6 @@ Sampling.py
 Prototyping multi-tube turbidity reader.msg
 my_app/hidden_navigation_module.py
 my_app/subrpocess_test.py
-my_app/test.py
 *.pickle
 *.xlsx
 shiny_example.py
