@@ -13,7 +13,7 @@ U3-LV has 2 digital-to-analog converters (DAC0 and DAC1)
     DAC0 -> power-switching relay to LEDs & Sensors
     DAC1 -> linear voltage regulator to sensors
 """
-DAC_O_1_voltages = [5, 2.6]
+DAC_0_1_voltages = [5, 2.6]
 
 def resource_path(relative_path):
     """ Get path to resource, works for dev and for PyInstaller """
