@@ -8,6 +8,13 @@ import u3
 
 config_file = "config.dat"
 
+"""
+U3-LV has 2 digital-to-analog converters (DAC0 and DAC1)
+    DAC0 -> power-switching relay to LEDs & Sensors
+    DAC1 -> linear voltage regulator to sensors
+"""
+DAC_O_1_voltages = [5, 2.6]
+
 def resource_path(relative_path):
     """ Get path to resource, works for dev and for PyInstaller """
     try:
@@ -52,13 +59,10 @@ def retry(max_retries, wait_time):
 #LabJack U3-LV throws exception if connection is busy or not closed
 #retry all LabJack U3 interactions in case LabJack is busy taking a reading for a parallel experiment
 @retry(max_retries = 4, wait_time = 1)
-def measure_voltage(serialNumber, ports:list, n_reps = 9, DAC_voltages =[5,2.6]):
+def measure_voltage(serialNumber, ports:list, n_reps = 9, DAC_voltages = DAC_0_1_voltages):
     """
     Interface with hardware to measure voltages.
     LabJack U3-LV has 16 analog inputs (FIO and EIO called by a sum of powers of 2)
-    U3-LV has 2 digital-to-analog converters (DAC0 and DAC1)
-        DAC0 -> power-switching relay to LEDs & Sensors
-        DAC1 -> linear voltage regulator to sensors
     """
     d = u3.U3(firstFound = False, serial = serialNumber)
     positions = [int(p)-1 for p in ports]
