@@ -117,7 +117,7 @@ def setup_server(input, output, session, main_navs):
 
     @reactive.calc
     def count_available_ports():
-        trigger()
+        req(trigger() == True)
         return len(Port.report_available_ports())
 
     @reactive.calc
@@ -129,7 +129,7 @@ def setup_server(input, output, session, main_navs):
     @output
     @render.ui
     def ref_types():
-        trigger()
+        req(trigger() == True)
         input.commit_start()
         input.cancel_start()
         input.cancel_setup()
@@ -213,6 +213,7 @@ def setup_server(input, output, session, main_navs):
     
     @reactive.calc
     def file_path():#Get path to current directory
+        req(trigger() == True)
         if getattr(sys, 'frozen', False):
             application_path = os.path.dirname(sys.executable)
         elif __file__:
@@ -271,7 +272,7 @@ def setup_server(input, output, session, main_navs):
         current_run.start_experiment()
         return_home.set(return_home() + 1)
         reset_switch()
-
+        
     @reactive.Effect
     @reactive.event(input.cancel_start)
     def _():
