@@ -107,10 +107,9 @@ def measure_temp(serialNumber):
 def kelvin_to_celcius(k):
     return k-273.15
 
-def get_measurement_row(test:dict, ref_port, ref_device, starttime):
+def get_measurement_row(test:dict, starttime):
     temperatures = []
     measurements_row = []
-    measurements_row =measure_voltage(ref_device, ports=[ref_port])
     for device, ports in test.items():
         measurements_row = measurements_row + measure_voltage(device, ports=ports)
         temperatures.append(measure_temp(device))
@@ -168,16 +167,16 @@ def kill_switch(pickle_path, output_file):
         sys.exit()
     """
 
-def per_iteration(file, test, ref_port, ref_device, starttime, interval ):
+def per_iteration(file, test, starttime, interval ):
     try:
         #check kill switch
         #append_list_to_tsv creates missing file
         #must check kill switch first if file deletion/rename/move is a kill switch
         kill_switch(config_file, file)
 
-        new_OD= get_measurement_row(test, ref_port, ref_device, starttime)
+        new_volts= get_measurement_row(test, starttime)
         #new_OD = voltage_to_OD(ref_voltage_t_zero, t_zero_voltages, new_row)
-        append_list_to_tsv(new_OD, file)
+        append_list_to_tsv(new_volts, file)
         
         #reset
         failures = 0
@@ -198,15 +197,11 @@ def per_iteration(file, test, ref_port, ref_device, starttime, interval ):
 
 def collect_header(path):
     with open(path, "r") as f:
-        #read first six lines (0 through 5)
-        lines = f.readlines()[0:6]
-    info, device_names, device_ids, ports, usages, t_zero_voltages = [line.split("\t")[1:] for line in lines]
+        lines = f.readlines()[0:5]
+    info, device_names, device_ids, ports, usages= [line.split("\t")[1:] for line in lines]
     name, interval = info[0:2]
     interval = float(interval)*60
-    ref_voltage_t_zero = t_zero_voltages.pop(0)
-    ref_device = device_ids.pop(0)
-    ref_port = ports.pop(0)
-    return [name, interval, ref_voltage_t_zero, ref_device, ref_port, device_ids, ports, usages]
+    return [name, interval, device_ids, ports, usages]
 
 ################################# MAIN ######################################################
 if __name__ == "__main__":
@@ -215,7 +210,7 @@ if __name__ == "__main__":
 
 
     starttime = time.monotonic()
-    name, interval, ref_voltage_t_zero, ref_device, ref_port, device_ids, ports, usages= collect_header(file)
+    name, interval, device_ids, ports, usages= collect_header(file)
     test = lists_to_dictlist(device_ids, ports)
 
     #print start time to header
@@ -224,5 +219,4 @@ if __name__ == "__main__":
     failures = 0 #track consecutive failed iterations
     while True:
         per_iteration(file = file, test = test,
-                      ref_port = ref_port, ref_device = ref_device,
                       starttime = starttime, interval = interval)

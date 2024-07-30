@@ -18,17 +18,12 @@ class Experiment:
     """
     all = []
     
-    def __init__(self, name:str, interval:int, ref, test_ports:list, outfile) -> None:
+    def __init__(self, name:str, interval:int, test_ports:list, outfile) -> None:
         self.name = name
         self.interval = interval
-        self.reference_port = ref
-        self.reference_blank = None
-        self.test_ports = test_ports
-        self.test_blanks = [None for x in test_ports]
         self.PID = None
         self.path = outfile 
-        self.all_ports = [self.reference_port] + self.test_ports
-
+        self.all_ports = test_ports
     def __eq__(self, other):
         return (self.name == other.name and self.PID == other.PID)
     
@@ -37,20 +32,8 @@ class Experiment:
 
     def blanks_needed(self):
         for_tests = [port for port, blank in zip(self.test_ports, self.test_blanks) if blank is None]
-        for_ref = []
-        if self.reference_blank is None: 
-            for_ref = [self.reference_port]
-        return for_tests + for_ref
-    
-    """    
-    def read_blanks(self, ports:list):
-        devices = set(p.device for p in ports)
-        for device in devices:
-            ports_on_device = [p for p in ports if p.device == device]
-            readings = measure_voltage(device.sn, ports_on_device, 9)
-            self.update_ports(ports_on_device, readings)
-    """
-   
+        return for_tests
+
     @staticmethod
     def load_pickle():
         local_pickle = {}
@@ -88,23 +71,19 @@ class Experiment:
         Experiment.reconcile_pickle()
 
     def record_usage(self):
-        for p in self.test_ports:
+        for p in self.all_ports:
             p.users.append(self.name)
             p.usage = 1
-        #Set usage/user for ref port
-        self.reference_port.users.append(self.name)
-        self.reference_port.usage = 2
 
     def write_outfile_header(self):
+        info = ["#Info:", self.name, self.interval]
         device_names = ["#Device Names:"] + [port.device.name for port in self.all_ports]
         device_ids = ["#Device IDs:"] + [port.device.sn for port in self.all_ports]
         ports = ["#Ports:"] + [port.position for port in self.all_ports]
         usage = ["#Usage:"] + [port.usage for port in self.all_ports]
-        calibration = ["#Reference Voltage:"] + [port.position for port in self.all_ports]
-        lines = [device_names, device_ids, ports, usage, calibration]
+        lines = [info, device_names, device_ids, ports, usage]
 
         #Print Header to File
-        append_list_to_tsv(("#Info:", self.name, self.interval), self.path)
         for line in lines:
             append_list_to_tsv(line, self.path)
         sleep(2)

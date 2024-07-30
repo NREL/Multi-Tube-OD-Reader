@@ -37,36 +37,40 @@ def setup_ui():
             value = title
         )
 
-    tab_titles = ["setup", 
-                "start",
-                ]
+    tab_titles = ["info",
+                  "device",
+                  "start",
+                  ]
 
     tab_headings = ["Setup a New Run",
-                    "Before Starting",
+                    "Choose a Device",
+                    "Start Run"
                     ]
     
-    tab_subheadings = ["Set Experimental Parameters",
-                    "",
-                    ]
+    tab_subheadings = ["Experimental Info",
+                       "",
+                       "",
+                       ]
 
     tab_cancel_labels = ["Cancel",
-                    "Cancel",
-                    ]
+                         "Cancel",
+                         "Cancel",
+                        ]
 
     tab_commit_labels = ["Next",
-                    "Start Run",
-                    ]
+                         "Next",
+                         "Start Run",
+                        ]
 
     tab_ui_elements = [[ui.input_text("experiment_name", "Experiment Name", placeholder = "--Enter Name Here--", value = None),
                             ui.input_numeric("interval", "Timepoint interval (min)", value = 10),
-                            ui.output_ui("ref_types"),
-                            ui.output_ui("choose_ref_device"),
-                            ui.output_ui("choose_ref_port"),
-                            controlled_numeric_ui("ports_available"),
-                            ],
-                        [ui.output_text_verbatim("ports_used_text"),
-                            ],
-                        ]
+                       ],
+                       [ui.output_ui("choose_device"),
+                            controlled_numeric_ui("ports_available"), 
+                       ],
+                       [ui.output_text_verbatim("ports_used_text"),
+                       ],
+                      ]
 
     return ui.page_fluid(
         ui.layout_sidebar(
@@ -97,7 +101,7 @@ def setup_ui():
                      tab_cancel_labels, 
                      tab_commit_labels,
                      )],
-                selected= "setup",
+                selected= "info",
                 id = "setup_run_navigator",
             ),                  
         ),
@@ -117,97 +121,38 @@ def setup_server(input, output, session, main_navs):
 
     @reactive.calc
     def count_available_ports():
+        #for controlled_numeric element and for no_ports_left modal
         req(trigger() == True)
         return len(Port.report_available_ports())
+    
+    @reactive.calc
+    def devices_available():
+        return {p.device.sn:p.device.name for p in Port.report_available_ports()}
 
     @reactive.calc
     def max_ports():
-        return count_available_ports() - int(input.new_ref_port())
+        ports = [p for p in Port.report_available_ports() if p.device.sn == input.chosen_device()]
+        return len(ports) #- int(input.new_ref_port())
     
     n_ports_requested = controlled_numeric_server("ports_available", my_label = "Number of Growth Tubes", my_min = 1, my_max = max_ports)
 
     @output
     @render.ui
-    def ref_types():
-        req(trigger() == True)
-        input.commit_start()
-        input.cancel_start()
-        input.cancel_setup()
-        #Options need to be numerical to be accounted in "max_ports"
-        if Port.report_ref_ports():
-            options = {1: "New", 0:"Existing"}
-            selected = 0
-        else:
-            options = {1:"New"}
-            selected = 1
-        return ui.input_radio_buttons("new_ref_port", "Create New or Use Existing Reference Tube?", options, selected = selected)
-
-    @reactive.calc
-    def possible_ref_ports():
-        req(input.new_ref_port())
-        trigger()
-        if input.new_ref_port() == "1": #Use new port
-            ports = Port.report_available_ports()
-        elif input.new_ref_port() == "0": #Use existing port
-            ports = Port.report_ref_ports()
-        return ports
-    
-    @output
-    @render.ui
-    def choose_ref_device():
-        req(possible_ref_ports())
-        input.commit_start()
-        input.cancel_start()
-        input.cancel_setup()
-        choices = []
-        for port in possible_ref_ports():
-            if port.device.name not in choices:
-                choices.append(port.device.name)
-        return ui.input_radio_buttons("chosen_ref_device", "Choose a Reference Device", choices, selected = None)
-
-    @output
-    @render.ui 
-    def choose_ref_port():
-        req(input.chosen_ref_device())
-        req(possible_ref_ports())
-        input.commit_start()
-        input.cancel_start()
-        input.cancel_setup()
-        device_name = input.chosen_ref_device()
-        device = next((x for x in Device.all if x.name == device_name), None)
-        choices = [port.position for port in possible_ref_ports() if port in device.ports]
-        if choices:
-            return ui.input_radio_buttons("chosen_ref_port", "Choose A Reference Port", choices, inline= True, selected = None)
-
+    def choose_device():
+        return ui.input_radio_buttons("chosen_device", "Choose a Device", devices_available(), selected = None)
+  
     @reactive.calc
     def assigned_test_ports():
         all_ports = Port.report_available_ports()
         #don't allow ref_port to be assigned as test port
-        ports = [p for p in all_ports if p != ref_port() ]
+        ports = [p for p in all_ports if p.device.sn == input.chosen_device()] #if p != ref_port() ]
         return ports[0:n_ports_requested()]
-
-    @reactive.calc
-    def ref_port():
-        req(input.chosen_ref_device())
-        req(input.chosen_ref_port())
-        ref_device = input.chosen_ref_device()
-        ref_pos = input.chosen_ref_port()
-        p = [p for p in possible_ref_ports() if p.device.name == ref_device if int(p.position) == int(ref_pos)]
-        try:
-            output = p.pop(0)
-        except:
-            output = None
-        return output
-
+    
     @output
     @render.text
     def ports_used_text():
-        req(input.new_ref_port())
-        req(ref_port())
         header = "Place growth tubes in the following ports:"
-        ref = ' '.join(["\nMake sure that port", str(ref_port().position), "in", ref_port().device.name, "is empty!"])
         lines = [f"Port {port.position} in {port.device.name}" for port in assigned_test_ports()] 
-        lines.append(ref)
         lines.insert(0, header)
         return "\n".join(lines)
     
@@ -242,7 +187,7 @@ def setup_server(input, output, session, main_navs):
     ######################## Navigation #############################################
     
     @reactive.Effect
-    @reactive.event(input.commit_setup)
+    @reactive.event(input.commit_info)
     def _():
         if input.experiment_name() == "" or bad_name(input.experiment_name()):
             no_name = ui.modal(
@@ -253,21 +198,30 @@ def setup_server(input, output, session, main_navs):
             )
             ui.modal_show(no_name)
             return  
-        ui.update_navs("setup_run_navigator", selected = "start")
+        ui.update_navs("setup_run_navigator", selected = "device")
 
     @reactive.Effect
-    @reactive.event(input.cancel_setup)
+    @reactive.event(input.cancel_info)
     def _():
         reset_switch()
         return_home.set(return_home() + 1)
   
+    @reactive.Effect
+    @reactive.event(input.commit_device)
+    def _():
+        ui.update_navs("setup_run_navigator", selected = "start")
+
+    @reactive.Effect
+    @reactive.event(input.cancel_device)
+    def _():
+        ui.update_navs("setup_run_navigator", selected = "info")
+    
     @reactive.Effect
     @reactive.event(input.commit_start)
     def _():
         current_run = Experiment(name = input.experiment_name(),
                                  interval = input.interval(),
                                  test_ports = assigned_test_ports(),
-                                 ref = ref_port(),
                                  outfile = file_path())
         current_run.start_experiment()
         return_home.set(return_home() + 1)
@@ -279,17 +233,9 @@ def setup_server(input, output, session, main_navs):
         reset_switch()
 
     def reset_switch():       
-        if Port.report_ref_ports():
-            options = {1: "New", 0:"Existing"}
-            selected = 0
-        else:
-            options = {1:"New"}
-            selected = 1
-        ui.update_radio_buttons("new_ref_port", label = "Create New or Use Existing Reference Tube?", choices = options, selected = selected)
-        ui.update_radio_buttons("chosen_ref_device", selected= None)
-        ui.update_radio_buttons("chosen_ref_port", selected = None)
+        ui.update_radio_buttons("chosen_device", selected= None)
         ui.update_text("experiment_name", label = "Experiment Name", placeholder= "--Enter Name Here--", value = "")
-        ui.update_navs("setup_run_navigator", selected="setup")
+        ui.update_navs("setup_run_navigator", selected="info")
 
     no_ports_left = ui.modal(ui.markdown(
         """
