@@ -198,7 +198,7 @@ def per_iteration(file, test, starttime, interval ):
 def collect_header(path):
     with open(path, "r") as f:
         lines = f.readlines()[0:5]
-    info, device_names, device_ids, ports, usages= [line.split("\t")[1:] for line in lines]
+    info, device_names, device_ids, ports, usages= [line.rstrip("\n").split("\t")[1:] for line in lines]
     name, interval = info[0:2]
     interval = float(interval)*60
     return [name, interval, device_ids, ports, usages]
