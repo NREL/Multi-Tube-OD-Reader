@@ -18,4 +18,3 @@ pyinstaller --noconfirm --onefile --console --name "Multitube_OD_0.2.1" `
 --add-data "C:/Users/shebdon/AppData/Local/Programs/Python/Python312/Lib/site-packages/shinyswatch;shinyswatch/"  `
 "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/launch_exe.py" `
 --clean
-
