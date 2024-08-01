@@ -152,23 +152,4 @@ def server(input: Inputs, output: Outputs, session: Session):
     def _():
         ui.update_navs("front_page_navs", selected = "new_experiment") 
 
-
-    @reactive.Effect
-    @reactive.event(input.close_app, ignore_init= True, ignore_none= True)
-    async def _():
-        await session.close()
-        await session.app.stop()
-    
-   
-    @reactive.Effect
-    @reactive.event(input.close_app, ignore_init= True, ignore_none= True)
-    async def _():
-        await session.close()
-        await session.app.stop()
-    
-    def kill_server():
-        os.kill(os.getpid(), signal.SIGTERM)
-
-    session.on_ended(kill_server)
-
 app = App(app_ui, server)
