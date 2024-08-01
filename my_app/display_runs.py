@@ -5,15 +5,12 @@ import numpy as np
 import pandas
 
 
-def v_to_OD(header_path, data, calibration_path):
+def v_to_OD(header_path, data, cal_data):
     name, interval, device_ids, ports, usage = collect_header(header_path)
-    data.rename(columns = {0:"time", 1:"temp"}, inplace = True)
+    data.rename(columns = {0:"Time (min)", 1:"temp"}, inplace = True)
     output = data.iloc[:, 0:2]
     log_v = data.iloc[:, 2:].apply(np.log10)
     try:
-        pre_cal = pandas.read_csv(calibration_path, delimiter = "\t",
-                                index_col= [0,1], na_values = "nan", na_filter = True)
-        cal_data = pre_cal.sort_index().dropna(how = "all")
         for i, (id, port) in enumerate(zip(device_ids, ports)): 
             slope, intercept, r2, date = cal_data.loc[int(id), int(port)]
             od = log_v.iloc[:, i].apply(lambda y: (y - intercept)/slope)
@@ -48,7 +45,8 @@ def accordion_plot_ui(value="value"):
     return ui.accordion_panel(
                         ui.output_text("experiment_name"),
                         ui.output_plot("experimental_plot"),
-                        ui.input_action_button("stop_run", "Stop Run"),
+                        ui.row(ui.column(6,ui.input_action_button("excel_out", "Export Excel File")),
+                               ui.column(6,ui.input_action_button("stop_run", "Stop Run"))),
                     value= value
                     )
 
@@ -63,21 +61,30 @@ def accordion_plot_server(input, output, session, exp_obj, calibration_path):
     @render.text()
     def experiment_name():
         return exp_obj.name
-       
-    @reactive.file_reader(file_path(), interval_secs = 10)
-    def data():
-        #keep this raw data and v_to_OD separate, in case calibration data is missing
+
+    @reactive.calc()
+    def cal_data():
+        device_id = exp_obj.all_ports[0].device.sn
         try:
-            return pandas.read_csv(file_path(), delimiter="\t", comment="#", header = None)
+            pre_cal = pandas.read_csv(calibration_path, delimiter = "\t",
+                                    index_col= [0,1], na_values = "nan", na_filter = True)
+            return pre_cal.sort_index().dropna(how = "all").xs(device_id, level = "DeviceID", drop_level = False)
         except:
             return None
-        
+
+    @reactive.file_reader(file_path(), interval_secs = 10)
+    def data():
+        try:
+            data = pandas.read_csv(file_path(), delimiter="\t", comment="#", header = None)
+            return v_to_OD(file_path(), data, cal_data())
+        except:
+            return None, None
         
     @output
     @render.plot
     def experimental_plot():
-        req(type(data()) == pandas.DataFrame)
-        output, condition = v_to_OD(file_path(), data(), calibration_path)
+        req(type(data()[0]) == pandas.DataFrame)
+        output, condition= data()
         if condition:
             return make_figure(output, exp_obj.name, "Optical Density")
         else:
@@ -89,6 +96,21 @@ def accordion_plot_server(input, output, session, exp_obj, calibration_path):
                     ui.column(6,ui.input_action_button("commit_stop", "Stop Run"))),
         easy_close= False,
     )
+
+    @reactive.effect
+    @reactive.event(input.excel_out)
+    def _():
+        output, condition = data()
+        if condition:
+            sheetname = "Calibrated ODs"
+        else:
+            sheetname = "log10(OD)"
+        with pandas.ExcelWriter("".join((exp_obj.name, ".xlsx"))) as writer:
+            output.to_excel(writer, sheet_name = sheetname)
+            if cal_data() is not None:
+                cal_data().to_excel(writer, sheet_name = "Calibration Data")
+
+            
 
     @reactive.Effect
     @reactive.event(input.stop_run)
