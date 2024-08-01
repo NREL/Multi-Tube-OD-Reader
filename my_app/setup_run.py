@@ -138,7 +138,8 @@ def setup_server(input, output, session, main_navs):
         ports = [p for p in Port.report_available_ports() if p.device.sn == input.chosen_device()]
         return len(ports) #- int(input.new_ref_port())
     
-    n_ports_requested = controlled_numeric_server("ports_available", my_label = "Number of Growth Tubes", my_min = 1, my_max = max_ports)
+    n_ports_requested = controlled_numeric_server("ports_available", my_label = "Number of Growth Tubes",
+                                                  my_value = 1, my_min = 1, my_max = max_ports)
 
     @output
     @render.ui
