@@ -248,6 +248,7 @@ def setup_server(input, output, session, main_navs):
     no_ports_left = ui.modal(ui.markdown(
         """
         #### Troubleshooting tips:
+        - Instrument may be busy, wait a few seconds.
         - Ensure all devices are properly connected
         - Connect another device
         - End current runs to free up space
