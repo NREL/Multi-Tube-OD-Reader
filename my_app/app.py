@@ -48,7 +48,7 @@ app_ui = ui.page_navbar(
         ui.output_ui("gone_wrong"),
     ),
     title="MultiTubeOD",
-    id = "front_page" 
+    id = "front_page_navs" 
 )
 
 def server(input: Inputs, output: Outputs, session: Session):
@@ -65,7 +65,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     configure_server("config")
 
     #setup new run
-    setup_complete = setup_server("setup", input.front_page)        
+    setup_complete = setup_server("setup", input.front_page_navs)        
 
    # return_home = analysis_server("analysis")
 
@@ -137,20 +137,20 @@ def server(input: Inputs, output: Outputs, session: Session):
     @reactive.effect
     @reactive.event(setup_complete)
     def _():
-        ui.update_navs("front_page", selected = "home")
+        ui.update_navs("front_page_navs", selected = "home")
 
     """    
     @reactive.effect
     @reactive.event(return_home)
     def _():
-        ui.update_navs("front_page", selected = "home")
+        ui.update_navs("front_page_navs", selected = "home")
     """
 
 
     @reactive.effect
     @reactive.event(input.new_experiment)
     def _():
-        ui.update_navs("front_page", selected = "new_experiment") 
+        ui.update_navs("front_page_navs", selected = "new_experiment") 
 
 
     @reactive.Effect
