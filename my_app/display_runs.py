@@ -7,20 +7,22 @@ import pandas
 
 def v_to_OD(header_path, data, calibration_path):
     name, interval, device_ids, ports, usage = collect_header(header_path)
+    data.rename(columns = {0:"time", 1:"temp"}, inplace = True)
     output = data.iloc[:, 0:2]
-    output.rename(columns = {0:"time", 1:"temp"})
     log_v = data.iloc[:, 2:].apply(np.log10)
-    pre_cal = pandas.read_csv(calibration_path, delimiter = "\t",
-                            index_col= [0,1], na_values = "nan", na_filter = True)
-    cal_data = pre_cal.sort_index().dropna(how = "all")
     try:
+        pre_cal = pandas.read_csv(calibration_path, delimiter = "\t",
+                                index_col= [0,1], na_values = "nan", na_filter = True)
+        cal_data = pre_cal.sort_index().dropna(how = "all")
         for i, (id, port) in enumerate(zip(device_ids, ports)): 
             slope, intercept, r2, date = cal_data.loc[int(id), int(port)]
             od = log_v.iloc[:, i].apply(lambda y: (y - intercept)/slope)
             output = output.join(od.to_frame(name = port))
-    except KeyError:
-        return False
-    return output
+        return output, True
+    except:
+        rename_dict = dict(zip(data.columns[2:], ports))
+        output = data.rename(columns = rename_dict)
+        return output, False
 
 def make_figure(df, name, ylabel):
     """y_cols = df.columns[2:]
@@ -71,13 +73,11 @@ def accordion_plot_server(input, output, session, exp_obj, calibration_path):
     @render.plot
     def experimental_plot():
         req(type(data()) == pandas.DataFrame)
-        output = None
-        if type(calibration_path) != bool:
-            output = v_to_OD(file_path(), data(), calibration_path)
-        if type(output) == pandas.DataFrame:
+        output, condition = v_to_OD(file_path(), data(), calibration_path)
+        if condition:
             return make_figure(output, exp_obj.name, "Optical Density")
         else:
-            return make_figure(data(), exp_obj.name, "Voltage")
+            return make_figure(output, exp_obj.name, "log10(Voltage)")
 
     confirm_stop = ui.modal("Are you sure you want to stop this run?",
         title = "Stop Run?",
