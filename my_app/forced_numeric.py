@@ -4,22 +4,29 @@ def controlled_numeric_ui():
     return ui.output_ui("numeric")
 
 @module.server
-def controlled_numeric_server(input, output, session, my_label:str = "Can't type out-of-range number", my_min = 1, my_max =100):
+def controlled_numeric_server(input, output, session, my_label, my_value, my_min, my_max):
     
     @output
     @render.ui
     def numeric():
-        return ui.input_numeric("controlled_numeric", my_label, 1,  min = my_min, max =my_max())
+        return ui.input_numeric("controlled_numeric", my_label, value = my_value,  min = my_min, max =my_max())
     
-    @reactive.Effect
+    @reactive.calc
+    def fixed_value():
+        val = input.controlled_numeric()
+        if val is None:
+            return 1
+        if not isinstance(val, int) and isinstance(val, float):
+            return round(val)
+        if val > my_max() :
+            return my_max()
+        if val < my_min :
+            return my_min    
+        
+    @reactive.effect
+    @reactive.event(fixed_value)
     def _():
-        req(input.controlled_numeric())
-        if not isinstance(input.controlled_numeric(), int):
-            return
-        if input.controlled_numeric() > my_max() :
-            ui.update_numeric("controlled_numeric", label=my_label, value=my_max(), min = my_min, max = my_max())
-        if input.controlled_numeric() < my_min :
-            ui.update_numeric("controlled_numeric", label=my_label, value=my_min, min = my_min, max = my_max())
+        ui.update_numeric("controlled_numeric", label=my_label, value=fixed_value(), min = my_min, max = my_max())
 
     return input.controlled_numeric
 
