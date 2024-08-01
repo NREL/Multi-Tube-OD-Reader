@@ -112,6 +112,8 @@ def setup_server(input, output, session, main_navs):
     
     return_home = reactive.Value(0)
 
+    reset_counter = reactive.Value(0)
+
     @reactive.calc
     def nav_on_tab():
         if main_navs() == "new_experiment":
@@ -127,10 +129,12 @@ def setup_server(input, output, session, main_navs):
     
     @reactive.calc
     def devices_available():
+        reset_counter()
         return {p.device.sn:p.device.name for p in Port.report_available_ports()}
 
     @reactive.calc
     def max_ports():
+        reset_counter()
         ports = [p for p in Port.report_available_ports() if p.device.sn == input.chosen_device()]
         return len(ports) #- int(input.new_ref_port())
     
@@ -139,10 +143,12 @@ def setup_server(input, output, session, main_navs):
     @output
     @render.ui
     def choose_device():
+        reset_counter()
         return ui.input_radio_buttons("chosen_device", "Choose a Device", devices_available(), selected = None)
   
     @reactive.calc
     def assigned_test_ports():
+        reset_counter()
         all_ports = Port.report_available_ports()
         #don't allow ref_port to be assigned as test port
         ports = [p for p in all_ports if p.device.sn == input.chosen_device()] #if p != ref_port() ]
@@ -151,6 +157,7 @@ def setup_server(input, output, session, main_navs):
     @output
     @render.text
     def ports_used_text():
+        reset_counter()
         header = "Place growth tubes in the following ports:"
         lines = [f"Port {port.position} in {port.device.name}" for port in assigned_test_ports()] 
         lines.insert(0, header)
@@ -236,6 +243,7 @@ def setup_server(input, output, session, main_navs):
         ui.update_radio_buttons("chosen_device", selected= None)
         ui.update_text("experiment_name", label = "Experiment Name", placeholder= "--Enter Name Here--", value = "")
         ui.update_navs("setup_run_navigator", selected="info")
+        reset_counter.set(reset_counter() + 1)
 
     no_ports_left = ui.modal(ui.markdown(
         """
