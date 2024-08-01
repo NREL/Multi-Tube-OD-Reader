@@ -100,12 +100,14 @@ def accordion_plot_server(input, output, session, exp_obj, calibration_path):
     @reactive.effect
     @reactive.event(input.excel_out)
     def _():
+        excel_file_name = "".join((exp_obj.name, ".xlsx"))
+        ui.notification_show(f"Saving to {excel_file_name}.")
         output, condition = data()
         if condition:
             sheetname = "Calibrated ODs"
         else:
             sheetname = "log10(OD)"
-        with pandas.ExcelWriter("".join((exp_obj.name, ".xlsx"))) as writer:
+        with pandas.ExcelWriter(excel_file_name) as writer:
             output.to_excel(writer, sheet_name = sheetname)
             if cal_data() is not None:
                 cal_data().to_excel(writer, sheet_name = "Calibration Data")

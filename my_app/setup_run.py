@@ -62,7 +62,7 @@ def setup_ui():
                          "Start Run",
                         ]
 
-    tab_ui_elements = [[ui.input_text("experiment_name", "Experiment Name", placeholder = "--Enter Name Here--", value = None),
+    tab_ui_elements = [[ui.input_text("experiment_name", "File Name", placeholder = "--Enter Name Here--", value = None),
                             ui.input_numeric("interval", "Timepoint interval (min)", value = 10),
                        ],
                        [ui.output_ui("choose_device"),
@@ -78,17 +78,15 @@ def setup_ui():
                 ui.output_text("trouble_shooting_output"),
                 ui.markdown(
                     """
-                    **Reference port**: 
-                        Empty port to detect voltage changes due to temperature fluctuations.
-
                     ### Instructions:
-                    1. Set growth parameters
-                        - Set number of growths
+                    1. Set experiment info
+                        - Unique file name
+                        - No special characters (underscores OK)
                         - Set timepoint interval (in minutes)
-                        - Set reference port
-                    2. Start Run
-                        - Place growth tubes and start detection
-
+                    2. Choose device and number of tubes
+                    3. Place tubes in assigned ports
+                    4. Start the run
+                        - Data are deposited into .tsv file
                     """
                 ),
             ),
@@ -227,6 +225,7 @@ def setup_server(input, output, session, main_navs):
     @reactive.Effect
     @reactive.event(input.commit_start)
     def _():
+        ui.notification_show("Starting Run.")
         current_run = Experiment(name = input.experiment_name(),
                                  interval = input.interval(),
                                  test_ports = assigned_test_ports(),
@@ -234,7 +233,7 @@ def setup_server(input, output, session, main_navs):
         current_run.start_experiment()
         return_home.set(return_home() + 1)
         reset_switch()
-        
+
     @reactive.Effect
     @reactive.event(input.cancel_start)
     def _():
@@ -242,15 +241,15 @@ def setup_server(input, output, session, main_navs):
 
     def reset_switch():
         ui.update_radio_buttons("chosen_device", selected= None)
-        ui.update_text("experiment_name", label = "Experiment Name", placeholder= "--Enter Name Here--", value = "")
+        ui.update_text("experiment_name", label = "File Name", placeholder= "--Enter Name Here--", value = "")
         ui.update_navs("setup_run_navigator", selected="info")
         reset_counter.set(reset_counter() + 1)
 
     no_ports_left = ui.modal(ui.markdown(
         """
         #### Troubleshooting tips:
-        - Connect another device
         - Ensure all devices are properly connected
+        - Connect another device
         - End current runs to free up space
         """),
         title = "No Ports or Devices Available",
