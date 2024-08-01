@@ -45,8 +45,8 @@ def accordion_plot_ui(value="value"):
     return ui.accordion_panel(
                         ui.output_text("experiment_name"),
                         ui.output_plot("experimental_plot"),
-                        ui.row(ui.column(6,ui.input_action_button("excel_out", "Export Excel File")),
-                               ui.column(6,ui.input_action_button("stop_run", "Stop Run"))),
+                        ui.row(ui.column(6,ui.input_action_button("stop_run", "Stop Run"), align = "center"),
+                               ui.column(6,ui.input_action_button("excel_out", "Export Excel File"), align = "center")),
                     value= value
                     )
 
@@ -83,7 +83,12 @@ def accordion_plot_server(input, output, session, exp_obj, calibration_path):
     @output
     @render.plot
     def experimental_plot():
-        req(type(data()[0]) == pandas.DataFrame)
+        if type(data()[0]) != pandas.DataFrame:
+            f, ax = plt.subplots()
+            ax.text(0.5, 0.5, 'loading data', transform=ax.transAxes,
+                fontsize=40, color='gray', alpha=0.5,
+                ha='center', va='center', rotation=30)
+            return ax
         output, condition= data()
         if condition:
             return make_figure(output, exp_obj.name, "Optical Density")
@@ -92,11 +97,16 @@ def accordion_plot_server(input, output, session, exp_obj, calibration_path):
 
     confirm_stop = ui.modal("Are you sure you want to stop this run?",
         title = "Stop Run?",
-        footer= ui.row(ui.column(6,ui.modal_button("Keep Running")), 
-                    ui.column(6,ui.input_action_button("commit_stop", "Stop Run"))),
+        footer= ui.output_ui("modal_footer"),
         easy_close= False,
     )
 
+    @output
+    @render.ui
+    def modal_footer():
+        return ui.layout_columns(ui.input_action_button("cancel_stop", "Keep Running"),
+                                 ui.input_action_button("commit_stop", "Stop Run"))
+    
     @reactive.effect
     @reactive.event(input.excel_out)
     def _():
@@ -118,6 +128,11 @@ def accordion_plot_server(input, output, session, exp_obj, calibration_path):
     @reactive.event(input.stop_run)
     def _():
         ui.modal_show(confirm_stop)
+
+    @reactive.Effect
+    @reactive.event(input.cancel_stop)
+    def _():
+        ui.modal_remove()
 
     @reactive.Effect
     @reactive.event(input.commit_stop)

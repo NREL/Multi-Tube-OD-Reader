@@ -86,7 +86,6 @@ class Experiment:
         #Print Header to File
         for line in lines:
             append_list_to_tsv(line, self.path)
-        sleep(2)
 
     def start_subproc(self):
         path_to_script = resource_path("timecourse.py")
