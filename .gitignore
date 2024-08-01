@@ -52,6 +52,7 @@ my_app/subrpocess_test.py
 shiny_example.py
 *.pptx
 *.tsv
+!Calibration.tsv
 shiny_example.py
 Sampling.py
 *.png

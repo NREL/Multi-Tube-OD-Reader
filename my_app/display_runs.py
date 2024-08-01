@@ -1,6 +1,41 @@
 from shiny import module, ui, reactive, render, req, Inputs, Outputs, Session
+from timecourse import collect_header
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas
+
+
+def v_to_OD(header_path, data, calibration_path):
+    name, interval, device_ids, ports, usage = collect_header(header_path)
+    output = data.iloc[:, 0:2]
+    output.rename(columns = {0:"time", 1:"temp"})
+    log_v = data.iloc[:, 2:].apply(np.log10)
+    pre_cal = pandas.read_csv(calibration_path, delimiter = "\t",
+                            index_col= [0,1], na_values = "nan", na_filter = True)
+    cal_data = pre_cal.sort_index().dropna(how = "all")
+    try:
+        for i, (id, port) in enumerate(zip(device_ids, ports)): 
+            slope, intercept, r2, date = cal_data.loc[int(id), int(port)]
+            od = log_v.iloc[:, i].apply(lambda y: (y - intercept)/slope)
+            output = output.join(od.to_frame(name = port))
+    except KeyError:
+        return False
+    return output
+
+def make_figure(df, name, ylabel):
+    """y_cols = df.columns[2:]
+    x_cols = [0 for x in y_cols]
+    return df.plot(x = x_cols, y = y_cols, kind = "scatter",
+                   title = name, legend = True, colormap = "gist_earth",
+                   xlabel = "Time (min)", ylabel = ylabel)"""
+    f, ax = plt.subplots()
+    for i in df.columns[2:]:
+        ax.scatter(x = df.iloc[:, 0], y = df.loc[:, i])
+    ax.set_xlabel("Time (min)") 
+    ax.set_ylabel(ylabel) 
+    ax.set_title(name)
+    ax.legend(df.columns[2:], loc = "lower right", shadow = True)
+    return ax
 
 @module.ui
 def accordion_plot_ui(value="value"):
@@ -12,7 +47,7 @@ def accordion_plot_ui(value="value"):
                     )
 
 @module.server
-def accordion_plot_server(input, output, session, exp_obj):
+def accordion_plot_server(input, output, session, exp_obj, calibration_path):
     
     @reactive.calc()
     def file_path():
@@ -25,33 +60,24 @@ def accordion_plot_server(input, output, session, exp_obj):
        
     @reactive.file_reader(file_path(), interval_secs = 10)
     def data():
-        return pandas.read_csv(file_path(), delimiter="\t", comment="#")
+        #keep this raw data and v_to_OD separate, in case calibration data is missing
+        try:
+            return pandas.read_csv(file_path(), delimiter="\t", comment="#", header = None)
+        except:
+            return None
+        
         
     @output
     @render.plot
     def experimental_plot():
-        #Change this to plotly, interactive widget to get labels
-        try:
-            raw = data()
-        except pandas.errors.EmptyDataError:
-            return None
-        raw_col = raw.columns
-        temperature_df = raw[raw_col[0:2]]
-        od_df = raw.loc[:, raw.columns!=raw_col[1]]
-        col = od_df.columns
-        fig, ax = plt.subplots()
-        ax.set_xlabel("Time (min)")
-        ax.set_ylabel("Voltage")
-        ax.set_title(exp_obj.name)
-        for i, col_name in enumerate(col):
-            if i >= 1:
-                x = od_df[col[0]]
-                y = od_df[col[i]]
-                ax.scatter(x, y)
-                if len(x) >= 2: #otherwise plot shows error until second timepoint.
-                    ax.text(x.iloc[-1], y.iloc[-1], col_name)
-
-        return fig
+        req(type(data()) == pandas.DataFrame)
+        output = None
+        if type(calibration_path) != bool:
+            output = v_to_OD(file_path(), data(), calibration_path)
+        if type(output) == pandas.DataFrame:
+            return make_figure(output, exp_obj.name, "Optical Density")
+        else:
+            return make_figure(data(), exp_obj.name, "Voltage")
 
     confirm_stop = ui.modal("Are you sure you want to stop this run?",
         title = "Stop Run?",

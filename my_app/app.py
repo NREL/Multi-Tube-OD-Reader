@@ -15,7 +15,10 @@ if os.path.isfile(CONFIG_PATH):
     pass
 else:
     Experiment.reconcile_pickle()
-    
+
+calibration_path = os.path.join(os.path.dirname(CONFIG_PATH), "Calibration.tsv")  
+if not os.path.isfile(calibration_path):
+    calibration_path = False
 
 app_ui = ui.page_navbar(
     theme.materia(),
@@ -78,7 +81,7 @@ def server(input: Inputs, output: Outputs, session: Session):
                 experiment.stop_experiment()
                 continue #move on after removing dead experiment.
             name = experiment.name.replace(" ", "_")
-            server_list.append(accordion_plot_server(f"{name}_{counter()}", experiment))
+            server_list.append(accordion_plot_server(f"{name}_{counter()}", experiment, calibration_path))
             ui_list.append(accordion_plot_ui(f"{name}_{counter()}", name))
         counter.set(counter() +1) #creates new names for modules. reusing old names causes problems.
         
