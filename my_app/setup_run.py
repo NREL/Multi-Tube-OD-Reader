@@ -42,12 +42,12 @@ def setup_ui():
                   "start",
                   ]
 
-    tab_headings = ["Setup a New Run",
-                    "Choose a Device",
-                    "Start Run"
+    tab_headings = ["Info",
+                    "Parameters",
+                    "Start"
                     ]
     
-    tab_subheadings = ["Experimental Info",
+    tab_subheadings = ["",
                        "",
                        "",
                        ]
@@ -113,7 +113,7 @@ def setup_server(input, output, session, main_navs):
     return_home = reactive.Value(0)
 
     @reactive.calc
-    def trigger():
+    def nav_on_tab():
         if main_navs() == "new_experiment":
             Experiment.reconcile_pickle()
             return True
@@ -122,7 +122,7 @@ def setup_server(input, output, session, main_navs):
     @reactive.calc
     def count_available_ports():
         #for controlled_numeric element and for no_ports_left modal
-        req(trigger() == True)
+        req(nav_on_tab() == True)
         return len(Port.report_available_ports())
     
     @reactive.calc
@@ -158,7 +158,7 @@ def setup_server(input, output, session, main_navs):
     
     @reactive.calc
     def file_path():#Get path to current directory
-        req(trigger() == True)
+        req(nav_on_tab() == True)
         if getattr(sys, 'frozen', False):
             application_path = os.path.dirname(sys.executable)
         elif __file__:
@@ -232,7 +232,7 @@ def setup_server(input, output, session, main_navs):
     def _():
         reset_switch()
 
-    def reset_switch():       
+    def reset_switch():
         ui.update_radio_buttons("chosen_device", selected= None)
         ui.update_text("experiment_name", label = "Experiment Name", placeholder= "--Enter Name Here--", value = "")
         ui.update_navs("setup_run_navigator", selected="info")
