@@ -25,15 +25,19 @@ def v_to_OD(header_path, data, calibration_path):
         return output, False
 
 def make_figure(df, name, ylabel):
-    """y_cols = df.columns[2:]
-    x_cols = [0 for x in y_cols]
-    return df.plot(x = x_cols, y = y_cols, kind = "scatter",
-                   title = name, legend = True, colormap = "gist_earth",
-                   xlabel = "Time (min)", ylabel = ylabel)"""
+    labels = ["Time (sec)", "Time (min)", "Time (hr)", "Time (day)"]
+    multipliers = [60, 1, 1/60, 1/1440]
+    limits = [0, 2, 60, 1440]
+    raw_x = df.iloc[:, 0]
+    level = None
+    for i, j in enumerate(limits):
+        if raw_x.iloc[-1] > j:
+            level = i
+    final_x = raw_x.apply(lambda x: x*multipliers[level])
     f, ax = plt.subplots()
     for i in df.columns[2:]:
-        ax.scatter(x = df.iloc[:, 0], y = df.loc[:, i])
-    ax.set_xlabel("Time (min)") 
+        ax.scatter(x = final_x, y = df.loc[:, i])
+    ax.set_xlabel(labels[level]) 
     ax.set_ylabel(ylabel) 
     ax.set_title(name)
     ax.legend(df.columns[2:], loc = "lower right", shadow = True)
