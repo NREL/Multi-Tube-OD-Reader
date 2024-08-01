@@ -67,8 +67,8 @@ def accordion_plot_server(input, output, session, exp_obj, calibration_path):
         device_id = exp_obj.all_ports[0].device.sn
         try:
             pre_cal = pandas.read_csv(calibration_path, delimiter = "\t",
-                                    index_col= [0,1], na_values = "nan", na_filter = True)
-            return pre_cal.sort_index().dropna(how = "all").xs(device_id, level = "DeviceID", drop_level = False)
+                                      index_col= [0,1], na_values = "nan", na_filter = True)
+            return pre_cal.sort_index().dropna(how = "all").xs(int(device_id), level = "DeviceID", drop_level = False)
         except:
             return None
 
