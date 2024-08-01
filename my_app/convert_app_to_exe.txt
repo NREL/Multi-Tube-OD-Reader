@@ -1,5 +1,5 @@
 cd "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/"
-pyinstaller --noconfirm --onefile --console --name "Multitube_OD_0.2.2-test" `
+pyinstaller --noconfirm --onefile --console --name "Multitube_OD_0.2.3-test" `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/display_runs.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/app.py;." `
 --add-data "C:/Users/shebdon/Documents/GitHub/MultiTubeOD/my_app/configure_hardware.py;." `
