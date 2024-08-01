@@ -101,7 +101,7 @@ def accordion_plot_server(input, output, session, exp_obj, calibration_path):
     @reactive.event(input.excel_out)
     def _():
         excel_file_name = "".join((exp_obj.name, ".xlsx"))
-        ui.notification_show(f"Saving to {excel_file_name}.")
+        ui.notification_show(f"Saving to {excel_file_name}.", type = "message")
         output, condition = data()
         if condition:
             sheetname = "Calibrated ODs"

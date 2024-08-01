@@ -225,7 +225,7 @@ def setup_server(input, output, session, main_navs):
     @reactive.Effect
     @reactive.event(input.commit_start)
     def _():
-        ui.notification_show("Starting Run.")
+        ui.notification_show("Starting Run.", type = "message")
         current_run = Experiment(name = input.experiment_name(),
                                  interval = input.interval(),
                                  test_ports = assigned_test_ports(),
