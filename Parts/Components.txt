@@ -1,0 +1,35 @@
+Part	Supplier	MFR #	Supplier #	Per tube	per unit
+LED	Digikey		C566C-AFF-CU0W0252CT-ND	1	16
+LED Driver IC	Digikey		CL220N5-G-ND	1	16
+sensor	Amazon	TEMT6000	https://www.amazon.com/Coliao-TEMT6000-Professional-Intensity-Visible/dp/B0BZTZHRZS/ref=sr_1_3?crid=3V93MPTZEINLM&keywords=temt6000&qid=1702414203&sprefix=temt6000%2Caps%2C100&sr=8-3	1	16
+3-pin receptacle	Newark 	22-01-3037	38C9145	1	16
+3-pin 90 degree header	Digikey		WM4301-ND	1	16
+Contact sockets	Newark 	08-50-0032	62X0650	3	48
+2-conductor cable - 22 gauge	Digikey	30-01253	T1412-5-ND		
+3-conductor cable - 22 gauge	Digikey	8450 0101000	BEL1308-50-ND		
+10-pin receptacle (locking)	Digikey	wm8037-nd	901420010		
+10-pin header (locking)	Digikey	wm8325-nd	901301110		
+Crimps for 10-pin header			WM2510-ND		
+LabJack	LabJack				1
+USB cable	Digikey		5214-USBAB2ML-ND		1
+USB header	Newark 	USBR-B-S-S-O-TH	14R4574		1
+2.1 mm x 5.5 mm Barrel jack to 18 gauge bare wire	Digikey	10-03610	839-10-03610-ND		1
+"power supply, 2.5mm x 5.5mm x 9.5 mm"	Digikey	16-00015	839-1660-ND		1
+LM317	Digikey		296-13869-5-ND		1
+Solidstate relay	Digikey	AM37	3008-AB37-ND		1
+screws (pack of 50)	Digikey		HM1442-ND		36
+long screws (pack of 100)	Digikey	1591TS100			4
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
