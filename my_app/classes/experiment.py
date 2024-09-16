@@ -30,10 +30,6 @@ class Experiment:
     def __hash__(self):
         return hash((self.name, self.PID))
 
-    def blanks_needed(self):
-        for_tests = [port for port, blank in zip(self.test_ports, self.test_blanks) if blank is None]
-        return for_tests
-
     @staticmethod
     def load_pickle():
         local_pickle = {}

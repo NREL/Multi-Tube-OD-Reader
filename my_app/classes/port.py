@@ -15,10 +15,6 @@ class Port:
         self.usage = 0
         self.device = device
         self.position = position
-        self.ODs = []
-        self.voltages = []
-        self.temperatures = []
-        self.is_calibrated = False
 
     def __eq__(self, other):
         return (self.device == other.device and self.position == other.position)

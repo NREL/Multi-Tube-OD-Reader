@@ -138,13 +138,6 @@ def server(input: Inputs, output: Outputs, session: Session):
     def _():
         ui.update_navs("front_page_navs", selected = "home")
 
-    """    
-    @reactive.effect
-    @reactive.event(return_home)
-    def _():
-        ui.update_navs("front_page_navs", selected = "home")
-    """
-
 
     @reactive.effect
     @reactive.event(input.new_experiment)
