@@ -1,10 +1,10 @@
 from shinyswatch import theme
 from shiny import App, Inputs, Outputs, Session, reactive, render, ui, req
-from configure_hardware import configure_ui, configure_server
-from setup_run import setup_ui, setup_server
-from display_runs import accordion_plot_ui, accordion_plot_server
+from shiny_modules.configure_hardware import configure_ui, configure_server
+from shiny_modules.setup_run import setup_ui, setup_server
+from shiny_modules.display_runs import accordion_plot_ui, accordion_plot_server
 from timecourse import CONFIG_PATH
-from experiment import Experiment
+from classes.experiment import Experiment
 #from growth_analysis import analysis_ui, analysis_server
 import os
 

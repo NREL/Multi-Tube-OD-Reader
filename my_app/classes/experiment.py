@@ -1,5 +1,5 @@
-from port import Port
-from device import Device
+from classes.port import Port
+from classes.device import Device
 from timecourse import measure_voltage, CONFIG_PATH, append_list_to_tsv, resource_path
 from time import sleep
 import os

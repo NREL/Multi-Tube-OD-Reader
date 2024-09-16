@@ -1,6 +1,6 @@
 
 from LabJackPython import Close
-from port import Port
+from classes.port import Port
 from timecourse import measure_voltage, retry
 import u3
 import time

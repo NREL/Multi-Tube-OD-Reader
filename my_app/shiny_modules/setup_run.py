@@ -1,9 +1,9 @@
 from shiny import module, ui, reactive, render, req
-from forced_numeric import controlled_numeric_server, controlled_numeric_ui
+from shiny_modules.forced_numeric import controlled_numeric_server, controlled_numeric_ui
 import os
-from device import Device
-from port import Port
-from experiment import Experiment
+from classes.device import Device
+from classes.port import Port
+from classes.experiment import Experiment
 import sys
 
 def bad_name(st): 

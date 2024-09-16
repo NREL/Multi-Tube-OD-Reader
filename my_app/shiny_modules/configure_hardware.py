@@ -1,8 +1,28 @@
+"""
+Shiny "module" for configuring Multi-Tube-OD-Reader hardware.
+
+It includes functionality for selecting a device, renaming it, and triggering a visual indicator (blinking) on the device.
+
+Modules imported:
+- shiny.module: Provides the ability to define and use Shiny modules.
+- shiny.ui: Contains functions for creating Shiny UI components.
+- shiny.reactive: Provides reactive programming features for Shiny apps.
+- shiny.render: Contains functions for rendering outputs in a Shiny app.
+- shiny.req: A utility function to ensure certain conditions are met before proceeding.
+- device.Device: Device class for interacting with the hardware.
+"""
 from shiny import module, ui, reactive, render, req
-from device import Device
+from classes.device import Device
 
 @module.ui 
 def configure_ui():
+    """
+    Defines the user interface for configuring hardware devices.
+
+    Returns:
+        ui.Page: A fluid page layout containing UI elements for selecting a device,
+                 renaming it, and triggering a blink action.
+    """    
     return ui.page_fluid(
         ui.h2({"style": "text-align: center;"}, "Configure Hardware"),
         ui.row(
