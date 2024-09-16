@@ -1,0 +1,8 @@
+shiny
+shinyswatch
+pandas==2.2.0
+matplotlib==3.8.2
+numpy==1.26.3
+LabJackPython==2.1.0
+dill==0.3.8
+psutil==5.9.7
