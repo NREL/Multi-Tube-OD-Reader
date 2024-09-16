@@ -7,7 +7,6 @@ from timecourse import CONFIG_PATH
 from experiment import Experiment
 #from growth_analysis import analysis_ui, analysis_server
 import os
-import signal
 
 #need to add an option within the app to update/reload a dead pickle
 
