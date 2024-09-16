@@ -19,9 +19,10 @@ Sampling.py
 *.png
 *.jpg
 *.spec
-/my_app/*
+/my_app/build*
 *.exe
 *.dat
 *.svg
 *.pyc
 *.msg
+hidden_navigation_module.py
