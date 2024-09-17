@@ -308,7 +308,7 @@ def setup_server(input, output, session, main_navs):
         #Don't recalculate unless user is on this page
         req(nav_on_new_exp() == True)
 
-        #path to "Multi-Tube-OD-Reader" directory
+        #path to "Multi-Tube-OD-Reader/Output Data" directory
         if getattr(sys, 'frozen', False):
             # Pyinstaller sets app to run in temporary directory. 
             # This asks where executable was run from, not where temp is.
@@ -316,7 +316,7 @@ def setup_server(input, output, session, main_navs):
         elif __file__:
             # For non-frozen applications, use __file__ to show source directory
             application_path = Path(__file__).parents[2]
-        return application_path / (input.experiment_name() + ".tsv")
+        return application_path / "Output Data" / (input.experiment_name()  + ".tsv")
     
     @reactive.Effect
     @reactive.event(file_path)

@@ -251,7 +251,7 @@ def accordion_plot_server(input, output, session, exp_obj, calibration_path):
             sheetname = "log10(voltage)"
 
         #save excel file w/interpreted experiment data and calibration data
-        with pandas.ExcelWriter(excel_file_name) as writer:
+        with pandas.ExcelWriter(exp_obj.path.parent / excel_file_name) as writer:
             output.to_excel(writer, sheet_name = sheetname)
             if cal_data() is not None:
                 cal_data().to_excel(writer, sheet_name = "Calibration Data")
