@@ -2,11 +2,11 @@ from LabJackPython import Close
 import time
 import pickle
 import sys
-import os
+from pathlib import Path
 import statistics
 import u3
 
-config_file = "config.dat"
+config_file = "config.pkl"
 
 """
 U3-LV has 2 digital-to-analog converters (DAC0 and DAC1)
@@ -19,21 +19,24 @@ def resource_path(relative_path):
     """ Get path to resource, works for dev and for PyInstaller """
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
+        base_path = Path(sys._MEIPASS)
     except Exception:
-        base_path = os.path.abspath(".")
+        base_path = Path(__file__).parent
 
-    return os.path.join(base_path, relative_path)
+    return base_path / relative_path
 
-#Get path to current directory
+#Get path to Multi-Tube-OD-Reader directory
 if getattr(sys, 'frozen', False):
-    application_path = os.path.dirname(sys.executable)
+    # PyInstaller sets the 'frozen' attribute. sys.executable points to the executable
+    application_path = Path(sys.executable).parent
 elif __file__:
-    application_path = os.path.dirname(__file__)
+    # For non-frozen applications, __file__ is available
+    application_path = Path(__file__).parent
+
 
 #path to pass to the resf of the app, adjusted for frozen, vs active.
 #this timecourse script works with just the file name, path is already correct somehow.
-CONFIG_PATH = os.path.join(application_path, config_file)
+CONFIG_PATH = application_path / config_file
 
 def retry(max_retries, wait_time):
     """
@@ -149,7 +152,7 @@ def voltage_to_OD(v_ref_zero, time_zero_voltages, measurements):
 def kill_switch(pickle_path, output_file):
     #controls to shut down otherise-infinite loops 
     #terminate if output file has been renamed/moved/deleted.
-    if not os.path.isfile(output_file):
+    if not Path(output_file).exists():
         sys.exit()
 
     #terminate if pickle not found 
@@ -172,7 +175,7 @@ def per_iteration(file, test, starttime, interval ):
         #check kill switch
         #append_list_to_tsv creates missing file
         #must check kill switch first if file deletion/rename/move is a kill switch
-        kill_switch(config_file, file)
+        kill_switch(CONFIG_PATH, file)
 
         new_volts= get_measurement_row(test, starttime)
         #new_OD = voltage_to_OD(ref_voltage_t_zero, t_zero_voltages, new_row)
@@ -207,7 +210,6 @@ def collect_header(path):
 if __name__ == "__main__":
     #path to ouput data file
     file = sys.argv[1]
-
 
     starttime = time.monotonic()
     name, interval, device_ids, ports, usages= collect_header(file)

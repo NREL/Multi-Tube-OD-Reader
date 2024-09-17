@@ -8,7 +8,7 @@ Modules imported:
 - classes.device: Contains the Device class for managing Multi-Tube-OD-Reader devices.
 - timecourse: Provides functions for measuring voltage and handling experiment configuration.
 - time: Provides time-related functions.
-- os: Provides functions for interacting with the operating system.
+- Path from pathlib: A class for working with filesystem paths.
 - dill: Provides serialization and deserialization functions.
 - logging: Provides logging functionality.
 - subprocess: Provides functions for spawning new processes.
@@ -19,7 +19,7 @@ from classes.port import Port
 from classes.device import Device
 from timecourse import measure_voltage, CONFIG_PATH, append_list_to_tsv, resource_path
 from time import sleep
-import os
+from pathlib import Path
 import dill as pickle
 import logging
 import subprocess
@@ -84,7 +84,7 @@ class Experiment:
         local_pickle = {}
         
         #load file if it exists
-        if os.path.isfile(CONFIG_PATH):
+        if CONFIG_PATH.is_file():
             with open(CONFIG_PATH, 'rb') as f:
                 local_pickle = pickle.load(f)
         

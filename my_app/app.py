@@ -18,7 +18,7 @@ Modules imported:
 - setup_run: Shiny "module" for setting up new runs UI and server logic.
 - display_runs: Shiny "module" for displaying and managing ongoing runs.
 - experiment.Experiment: Class for managing experiments.
-- os: Provides functions for interacting with the operating system.
+- Path from pathlib: A class for working with filesystem paths.
 
 Constants:
 - CONFIG_PATH: Path to binary file created and maintained by the app. It 
@@ -35,19 +35,18 @@ from shiny_modules.setup_run import setup_ui, setup_server
 from shiny_modules.display_runs import accordion_plot_ui, accordion_plot_server
 from timecourse import CONFIG_PATH
 from classes.experiment import Experiment
-#from growth_analysis import analysis_ui, analysis_server
-import os
+from pathlib import Path
 
 #need to add an option within the app to update/reload a dead pickle
 
-if os.path.isfile(CONFIG_PATH):
+if CONFIG_PATH.exists():
     pass
 else:
     Experiment.reconcile_pickle()
 
-CALIBRATION_PATH = os.path.join(os.path.dirname(CONFIG_PATH), "Calibration.tsv")  
-if not os.path.isfile(CALIBRATION_PATH):
-    CALIBRATION_PATH = False
+print(CONFIG_PATH.parents[1])
+
+CALIBRATION_PATH = CONFIG_PATH.parents[0] / "Calibration.tsv"  
 
 app_ui = ui.page_navbar(
     theme.materia(),
@@ -123,7 +122,7 @@ def server(input: Inputs, output: Outputs, session: Session):
         ui_list = []
         for experiment in Experiment.all:
             #remove any old inactive experiments
-            if not os.path.exists(experiment.path):
+            if not Path(experiment.path).exists():
                 experiment.stop_experiment()
                 continue 
 

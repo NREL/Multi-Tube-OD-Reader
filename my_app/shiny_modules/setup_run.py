@@ -21,7 +21,7 @@ Modules imported:
 - shiny.reactive: Provides reactive programming features for Shiny apps.
 - shiny.render: Contains functions for rendering outputs in a Shiny app.
 - shiny.req: A utility function to ensure certain conditions are met before proceeding.
-- os: Provides functions for interacting with the operating system.
+- Path from pathlib: A class for working with filesystem paths.
 - sys: Provides access to system-specific parameters and functions.
 """
 
@@ -30,7 +30,7 @@ from shiny_modules.forced_numeric import controlled_numeric_server, controlled_n
 from classes.device import Device
 from classes.port import Port
 from classes.experiment import Experiment
-import os
+from pathlib import Path
 import sys
 
 def bad_name(st): 
@@ -308,13 +308,15 @@ def setup_server(input, output, session, main_navs):
         #Don't recalculate unless user is on this page
         req(nav_on_new_exp() == True)
 
-        #adapt path to app if running from frozen or directly from source.
+        #path to "Multi-Tube-OD-Reader" directory
         if getattr(sys, 'frozen', False):
-            application_path = os.path.dirname(sys.executable)
+            # Pyinstaller sets app to run in temporary directory. 
+            # This asks where executable was run from, not where temp is.
+            application_path = Path(sys.executable).parents[2]
         elif __file__:
-            application_path = os.path.dirname(__file__)
-
-        return os.path.join(application_path, input.experiment_name() + ".tsv")
+            # For non-frozen applications, use __file__ to show source directory
+            application_path = Path(__file__).parents[2]
+        return application_path / (input.experiment_name() + ".tsv")
     
     @reactive.Effect
     @reactive.event(file_path)
@@ -324,7 +326,7 @@ def setup_server(input, output, session, main_navs):
 
         See bad_name() in this module
         """        
-        if os.path.exists(file_path()) or bad_name(input.experiment_name()): 
+        if file_path().exists() or bad_name(input.experiment_name()): 
             file_exists = ui.modal(ui.markdown(
                 """
                 #### Please use a different name:
