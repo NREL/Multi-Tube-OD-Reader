@@ -170,7 +170,7 @@ def kill_switch(pickle_path, output_file):
         sys.exit()
     """
 
-def per_iteration(file, test, starttime, interval ):
+def per_iteration(file, test, starttime, interval, failures):
     try:
         #check kill switch
         #append_list_to_tsv creates missing file
@@ -221,4 +221,4 @@ if __name__ == "__main__":
     failures = 0 #track consecutive failed iterations
     while True:
         per_iteration(file = file, test = test,
-                      starttime = starttime, interval = interval)
+                      starttime = starttime, interval = interval, failures = failures)
