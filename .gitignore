@@ -25,4 +25,7 @@ Sampling.py
 *.svg
 *.pyc
 *.msg
+*.exe
+Launch.py
+*.zip
 hidden_navigation_module.py
