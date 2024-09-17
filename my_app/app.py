@@ -44,8 +44,6 @@ if CONFIG_PATH.exists():
 else:
     Experiment.reconcile_pickle()
 
-print(CONFIG_PATH.parents[1])
-
 CALIBRATION_PATH = CONFIG_PATH.parents[0] / "Calibration.tsv"  
 
 app_ui = ui.page_navbar(
