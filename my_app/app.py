@@ -21,9 +21,6 @@ Modules imported:
 - Path from pathlib: A class for working with filesystem paths.
 
 Constants:
-- CONFIG_PATH: Path to binary file created and maintained by the app. It 
-               stores (as a pickle) status info about active Experiment, Device, 
-               and Port objects to retain states between sessions.
 - CALIBRATION_PATH: Path to (an optional) `.csv` file created by the user. Provides 
                     slope-intercept info for calibrating optical density outputs
                     ports in devices. 
@@ -33,18 +30,15 @@ from shiny import App, Inputs, Outputs, Session, reactive, render, ui, req
 from shiny_modules.configure_hardware import configure_ui, configure_server
 from shiny_modules.setup_run import setup_ui, setup_server
 from shiny_modules.display_runs import accordion_plot_ui, accordion_plot_server
-from timecourse import CONFIG_PATH
+from timecourse import get_config_path
 from classes.experiment import Experiment
 from pathlib import Path
 
 #need to add an option within the app to update/reload a dead pickle
 
-if CONFIG_PATH.exists():
-    pass
-else:
-    Experiment.reconcile_pickle()
+Experiment.reconcile_pickle()
 
-CALIBRATION_PATH = CONFIG_PATH.parents[0] / "Calibration.tsv"  
+CALIBRATION_PATH = get_config_path().parents[0] / "Calibration.tsv"  
 
 app_ui = ui.page_navbar(
     theme.materia(),
@@ -88,7 +82,7 @@ def server(input: Inputs, output: Outputs, session: Session):
     #add_to_pickle/remove_from_pickle, see Experiment module
     Experiment.reconcile_pickle()
 
-    @reactive.file_reader(CONFIG_PATH)
+    @reactive.file_reader(get_config_path())
     def config_file():
         """
         Returns updated list of experiments when app state (config file) changes.

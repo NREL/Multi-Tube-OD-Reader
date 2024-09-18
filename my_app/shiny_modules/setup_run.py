@@ -308,11 +308,10 @@ def setup_server(input, output, session, main_navs):
         #Don't recalculate unless user is on this page
         req(nav_on_new_exp() == True)
 
-        #path to "Multi-Tube-OD-Reader/Output Data" directory
+        #Path changes if frozen by Py
         if getattr(sys, 'frozen', False):
-            # Pyinstaller sets app to run in temporary directory. 
-            # This asks where executable was run from, not where temp is.
-            application_path = Path(sys.executable).parents[2]
+            # when running as .exe: .exe and .tsv will be in sibling folders
+            application_path = Path(sys.executable).parents[1]
         elif __file__:
             # For non-frozen applications, use __file__ to show source directory
             application_path = Path(__file__).parents[2]

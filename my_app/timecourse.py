@@ -1,6 +1,6 @@
 from LabJackPython import Close
 import time
-import pickle
+import dill as pickle
 import sys
 from pathlib import Path
 import statistics
@@ -25,18 +25,12 @@ def resource_path(relative_path):
 
     return base_path / relative_path
 
-#Get path to Multi-Tube-OD-Reader directory
-if getattr(sys, 'frozen', False):
-    # PyInstaller sets the 'frozen' attribute. sys.executable points to the executable
-    application_path = Path(sys.executable).parent
-elif __file__:
-    # For non-frozen applications, __file__ is available
-    application_path = Path(__file__).parent
-
-
-#path to pass to the resf of the app, adjusted for frozen, vs active.
-#this timecourse script works with just the file name, path is already correct somehow.
-CONFIG_PATH = application_path / config_file
+def get_config_path():
+    if getattr(sys, 'frozen', False): #False is the default in case there is no "frozen" attribute
+        application_path = Path(sys.executable).parent
+    else:
+        application_path = Path(__file__).parent
+    return (application_path / config_file).resolve()
 
 def retry(max_retries, wait_time):
     """
@@ -155,27 +149,33 @@ def kill_switch(pickle_path, output_file):
     if not Path(output_file).exists():
         sys.exit()
 
-    #terminate if pickle not found 
+    #terminate if pickle not found
+    path_obj = Path(pickle_path)
+    if not path_obj.exists():
+        append_list_to_tsv([f"#Self terminating. {config_file} does not exist at {path_obj}.",
+                            f"#You must have deleted {config_file}."], output_file)   
+        sys.exit()
+
+    #terminate if pickle not loadable
     try:
-        with open(pickle_path, 'rb') as f:
-            running_experiments = pickle.load(f)["Experiment_names"]
+        with path_obj.open('rb') as f:  # Use Path's open() method
+            loaded_data = pickle.load(f)["Experiment_names"]
     except Exception as e:
-        append_list_to_tsv([f"#self terminating. Could not load {pickle_path}"], output_file)
+        append_list_to_tsv([f"#self terminating. Could not load {path_obj}"], output_file)
+        append_list_to_tsv([f"#{e}"], output_file)        
         sys.exit()
 
     #terminate if run not found in pickle
-    """
-    if experiment_name not in running_experiments:
+    if Path(output_file).stem not in loaded_data:
         append_list_to_tsv(["#Self terminating because run was not found in the pickle file."], output_file)
         sys.exit()
-    """
 
-def per_iteration(file, test, starttime, interval, failures):
+def per_iteration(file, pickle_path, test, starttime, interval, failures):
     try:
         #check kill switch
         #append_list_to_tsv creates missing file
         #must check kill switch first if file deletion/rename/move is a kill switch
-        kill_switch(CONFIG_PATH, file)
+        kill_switch(pickle_path = pickle_path, output_file = file)
 
         new_volts= get_measurement_row(test, starttime)
         #new_OD = voltage_to_OD(ref_voltage_t_zero, t_zero_voltages, new_row)
@@ -210,7 +210,7 @@ def collect_header(path):
 if __name__ == "__main__":
     #path to ouput data file
     file = sys.argv[1]
-
+    pickle_path = sys.argv[2]
     starttime = time.monotonic()
     name, interval, device_ids, ports, usages= collect_header(file)
     test = lists_to_dictlist(device_ids, ports)
@@ -220,5 +220,5 @@ if __name__ == "__main__":
 
     failures = 0 #track consecutive failed iterations
     while True:
-        per_iteration(file = file, test = test,
+        per_iteration(file = file, test = test, pickle_path = pickle_path,
                       starttime = starttime, interval = interval, failures = failures)

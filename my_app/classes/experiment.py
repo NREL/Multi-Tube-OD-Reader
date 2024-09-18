@@ -17,7 +17,7 @@ Modules imported:
 
 from classes.port import Port
 from classes.device import Device
-from timecourse import measure_voltage, CONFIG_PATH, append_list_to_tsv, resource_path
+from timecourse import measure_voltage, get_config_path, append_list_to_tsv, resource_path
 from time import sleep
 from pathlib import Path
 import dill as pickle
@@ -83,19 +83,28 @@ class Experiment:
         """        
         local_pickle = {}
         
+        config_file = get_config_path()
+
         #load file if it exists
-        if CONFIG_PATH.is_file():
-            with open(CONFIG_PATH, 'rb') as f:
+        if config_file.is_file():
+            with config_file.open('rb') as f:
                 local_pickle = pickle.load(f)
         
         #write a blank file if it doesn't exist
         else: 
-            with open(CONFIG_PATH, "wb") as f:
-                local_pickle = {"Experiments":[],"Experiment_names":[]}
-                pickle.dump(local_pickle, f, pickle.HIGHEST_PROTOCOL)
+            local_pickle = {"Experiments":[],"Experiment_names":[]}
+            Experiment.dump_config(local_pickle)
 
         #return current pickle, whether empty or full
         return local_pickle
+
+    @staticmethod
+    def dump_config(to_dump):
+        config_file = get_config_path()
+        with config_file.open('wb') as f:
+            pickle.dump(to_dump, f, pickle.HIGHEST_PROTOCOL)
+        
+        Experiment.reconcile_pickle()
 
     @staticmethod
     def add_to_pickle(experiment:object = None):
@@ -112,11 +121,7 @@ class Experiment:
         local_pickle = Experiment.load_pickle()
         local_pickle["Experiments"].append(experiment)
         local_pickle["Experiment_names"].append(experiment.name)
-        with open(CONFIG_PATH, 'wb') as f:
-            pickle.dump(local_pickle, f, pickle.HIGHEST_PROTOCOL)
-        
-        #resolve differences between internal Experiments and external "config" file
-        Experiment.reconcile_pickle()
+        Experiment.dump_config(local_pickle)
 
     @staticmethod
     def remove_from_pickle(experiment:object = None):
@@ -131,11 +136,7 @@ class Experiment:
         local_pickle = Experiment.load_pickle()
         local_pickle["Experiments"].remove(experiment)
         local_pickle["Experiment_names"].remove(experiment.name)
-        with open(CONFIG_PATH, 'wb') as f:
-            pickle.dump(local_pickle, f, pickle.HIGHEST_PROTOCOL)
-        
-        #resolve differences between internal Experiments and external "config" file
-        Experiment.reconcile_pickle()
+        Experiment.dump_config(local_pickle)
 
     def record_usage(self):
         """
@@ -169,7 +170,8 @@ class Experiment:
         Also stores PID in the Experiment object, for monitoring activity.
         """
         path_to_script = resource_path("timecourse.py")
-        command = ["python", path_to_script, self.path]
+        pickle_path = get_config_path()
+        command = ["python", path_to_script, self.path, pickle_path]
         pid = subprocess.Popen(command, creationflags = subprocess.CREATE_NO_WINDOW).pid
         print("pid: ", pid)
         self.PID = pid
