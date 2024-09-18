@@ -1,28 +1,18 @@
-3181-00-00.pdf
-Book1 (version 1).xlsx
-Current_runs.pickle
-Design
-fmicb-12-790576 (1).pdf
 LabJack-U3-Datasheet.pdf
 LabJack_config/*
 *.doc
 *.docx
 sandbox/*
-*.pickle
 *.xlsx
-shiny_example.py
 *.pptx
 *.tsv
 !Calibration.tsv
-shiny_example.py
 !Multitube_OD_0.2.4.exe
 test_multitube_app.py
-Sampling.py
 cover.png
 *.spec
 /my_app/build*
 *.exe
-*.dat
 *.svg
 *.pyc
 *.msg
