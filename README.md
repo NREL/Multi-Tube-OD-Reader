@@ -3,21 +3,33 @@
 Our **Multi-Tube-OD-Reader** device is based on the TubeOD reader [published here](https://doi.org/10.3389/fmicb.2021.790576), but with a housing to maximize throughput.
 
 This repository contains the schematics for 3D printing an enclosure, a parts list for constructing, and the code for controlling the 16-tube, in-line optical density monitoring device. This device and software are particularly useful for researchers studying microbes that grow well in Hungate tubes, but are not amenable to growth in microplate readers.
+
+- [Features](#features)
+- [Limitations](#limitations)
+- [Tutorial](#interacting-with-the-instrument)
+- [Installation](#installation)
+- [For Developers](#app-structure-mostly-for-developers--troubleshooting)
+- [License](#license)
+
 ### Features
 - **Real-time Monitoring:** View the OD measurements of multiple cultures in real time. Supports multiple, simultaneous, independent experiments.
 - **User-Friendly Interface:** Easy-to-use, browser-based GUI for data collection and managing hardware. Install the software, connect the USB cable, connect the power cable and it's ready to go.
 - **Calibration-ready:** Supports custom calibration tables to scale optical density readings to your favorite standard instrument. Raw data are always saved. Interpreted data can be saved as an xlsx file and include calibration tables. 
 - **Multi-User Safe:** Experiments are spun-off as independent processes that continue even if the app is closed. Unique file naming is enforced to ensure that previous data cannot be overwritten. 
 - **High throughput:** Connect as many Multi-Tube-OD-Readers as your incubator can hold. USB splitters and GUI allow identification and control of parallel independent instruments.
+
+[Back to top](#overview)
 ### Limitations
 - The hardware was designed for observing optical densities of *Clostridium thermocellum* growing in glass Hungate tubes. The optical properties of the glassware, medium and organism can interfere with the sensitivity of the instrument, especially at lower optical densities.
 - The code works for us. It is not extensively tested and may require some modification on your machine.
+
+[Back to top](#overview)
 ### Interacting with the Instrument
 #### Nomenclature
 - A *Device* is the whole unit with 16 Ports in it.
 - A *Port* holds and measures one tube. Each Port can operate independently.
 - An *Experiment* is a set of Ports & Devices taking measurements. Experiments run in the background indefinitely, until they are shut off in the app by the user or until the computer restarts.
-##### Instrument Setup
+#### Instrument Setup
 Initial installation instructions are provided below. For routine use...
 
 **Start the Shiny App** (if necessary) 
@@ -58,6 +70,8 @@ Performed mostly offline, no tab for this function
 - Transform raw Voltage data to log$_{10}$( Voltage ) 
 - Fit a line with y = Known data and x = log$_{10}$( Voltage )
 - Update the slope & intercept for each port and other relevant data into the `Calibration.tsv` found in the `my_app` directory.
+
+[Back to top](#overview)
 ### Installation 
 #### Hardware
 The hardware requires two connections:
@@ -98,6 +112,8 @@ pip install -r my_app/requirements.txt
 #from Multi-Tube-OD-Reader directory
 python -m shiny run --reload --launch-browser my_app/app.py 
 ```
+
+[Back to top](#overview)
 ### App Structure (mostly for developers & troubleshooting)
 The app was written in Python using modules in a three-tier architecture:
 1. *A minimal* `timecourse.py` *script*. This script, and the receives a `.csv` file with instructions in the header that describe the measurement parameters. This script controls the Multi-Tube-OD-Reader device throughout the duration of an experiment and feeds raw data into the `.csv` file. This script was designed to be lightweight so multiple parallel-independent instances can run simultaneously without crashing the computer.
@@ -107,6 +123,8 @@ The app was written in Python using modules in a three-tier architecture:
 	2. Store instrument and app state in `config.dat`
 	3. Calculate valid options for user input
 	4. Reject or correct invalid user input
+
+[Back to top](#overview)
 ### License
 The hardware and software were built from open source resources. The material in this repository were developed at the National Renewable Energy Laboratory under the Laboratory-Directed Research & Development program. The materials in this repository are subject to  ##########License##############
 
@@ -114,3 +132,5 @@ The hardware and software were built from open source resources. The material in
 - **Accuracy:** We make no representations or warranties about the accuracy, reliability, completeness, or timeliness of the content. The instructions and information provided may contain errors or inaccuracies.
 - **Functionality:** We do not guarantee that the hardware or software will function correctly or meet your needs. There may be unforeseen issues or incompatibilities that arise during implementation.
 - **Support:** There is no obligation to provide support, maintenance, or updates for the materials provided in this repository.
+
+[Back to top](#overview)
