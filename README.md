@@ -12,45 +12,59 @@ This repository contains the schematics for 3D printing an enclosure, a parts li
 ### Limitations
 - The hardware was designed for observing optical densities of *Clostridium thermocellum* growing in glass Hungate tubes. The optical properties of the glassware, medium and organism can interfere with the sensitivity of the instrument, especially at lower optical densities.
 - The code works for us. It is not extensively tested and may require some modification on your machine.
-### Interacting with the Instrument and GUI
-##### Nomenclature
+### Interacting with the Instrument
+#### Nomenclature
 - A *Device* is the whole unit with 16 Ports in it.
 - A *Port* holds and measures one tube. Each Port can operate independently.
 - An *Experiment* is a set of Ports & Devices taking measurements. Experiments run in the background indefinitely, until they are shut off in the app by the user or until the computer restarts.
 ##### Instrument Setup
 Initial installation instructions are provided below. For routine use...
+
 **Start the Shiny App** (if necessary) 
 ```
 #from the Multi-Tube-OD-Reader directory
 python -m shiny run --reload --launch-browser my_app/app.py 
 ```
 This should open your default web browser and show the user interface.
-##### User Interface
-**Home:** View ongoing Experiments.
-- Minimize or expand experiments to view data and reveal options to export interpreted data or terminate the experiment. 
-**Start New Run:** Define the following parameters for starting a new Experiment.
-- Experiment Name
-- Interval between measurements 
-- Name of Device to use
-- Number of Ports to use
-**Configure Hardware:** Manage connected devices.
-- Select Device by name
-- Activate LED "Blink" mode on hardware
-- Rename Device with a meaningful identifier
+### User Interface
+#### Home: 
+- View & interact with ongoing Experiments.
+![Image of Home Page with growth curve data showing for an active experiment](/../Multi-Tube-OD-Reader/Screenshots/Home%20Page%20with%20active%20experiment.png)
 
-**Calibration** (performed mostly offline, no tab for this function)
+- Safeguards protect from accidentally stopping the run.
+![Image of Home Page with a popup confirming user's intention to shut down the run](/../Multi-Tube-OD-Reader/Screenshots/Home%20Page%20with%20Stop-Run%20confirmation.png)
+
+#### Start New Run:
+- Step 1: Experiment name and measurement interval
+![Image of Start New Run page accepting experiment name and time interval inputs](/../Multi-Tube-OD-Reader/Screenshots/Start%20New%20Run%20Step%201.png)
+
+- Safeguards to protect from overwriting previous data files.
+![Image of Start New Run page warning user that the file name already exists](/../Multi-Tube-OD-Reader/Screenshots/Start%20New%20Run%20Invalid%20Name%20Warning.png)
+
+- Step 2: Select device and number of Ports. We named our devices based on the incubators they live in. ![Image of Start New Run page showing options for attached devices and number of available ports](/../Multi-Tube-OD-Reader/Screenshots/Start%20New%20Run%20Step%202.png)
+
+- Step 3: Place growth tubes. Ports are automatically assigned based on availability. ![Image of Start New Run page showing instructions on where to place culture tubes](/../Multi-Tube-OD-Reader/Screenshots/Start%20New%20Run%20Step%203.png)
+
+- Complete: The User is automatically redirected to the Home Page with the New Experiment added to the list of Active Experiments. ![Image of Home Page with a new experiment added](/../Multi-Tube-OD-Reader/Screenshots/Home%20Page%20with%20New%20active%20experiment.png)
+
+#### Configure Hardware:
+- Identify and Rename devices. The Blink button makes the indicator LED blink on the device. 
+![Image of Configure Hardware page showing options to select a device, make it blink and rename it](/../Multi-Tube-OD-Reader/Screenshots/Manage%20Hardware%20Page.png)
+
+#### Calibration: 
+Performed mostly offline, no tab for this function
 - Prepare reference tubes to several known optical densities. 
 - Measure each reference level using each port the Multi-Tube-OD-Reader
 - Transform raw Voltage data to log$_{10}$( Voltage ) 
 - Fit a line with y = Known data and x = log$_{10}$( Voltage )
 - Update the slope & intercept for each port and other relevant data into the `Calibration.tsv` found in the `my_app` directory.
 ### Installation 
-##### Hardware
+#### Hardware
 The hardware requires two connections:
 1. A USB cable for data transfer to the computer.
 	- USB splitters can be used to branch one USB cable from the computer to multiple Devices. This can help reduce the number of cables passing through the incubator.
 2. A power supply cable providing up to about 0.5 amps of 5V DC electrical power.
-##### Software
+#### Software
 The app requires a U3-compatible driver from [LabJack.com](https://support.labjack.com/docs/labjackpython-for-ud-exodriver-u12-windows-mac-lin).
 - For Windows: the UD Driver
 - Linux macOS: the Exodriver 
@@ -85,7 +99,6 @@ pip install -r my_app/requirements.txt
 python -m shiny run --reload --launch-browser my_app/app.py 
 ```
 ### App Structure (mostly for developers & troubleshooting)
-
 The app was written in Python using modules in a three-tier architecture:
 1. *A minimal* `timecourse.py` *script*. This script, and the receives a `.csv` file with instructions in the header that describe the measurement parameters. This script controls the Multi-Tube-OD-Reader device throughout the duration of an experiment and feeds raw data into the `.csv` file. This script was designed to be lightweight so multiple parallel-independent instances can run simultaneously without crashing the computer.
 2. *Three custom Python classes* `Device`, `Port`, *and* `Experiment` *mirroring their physical counterparts.* Objects of these classes convey data between the GUI, a `config.dat` file, and the instrument. The `config.dat` file stores the status of the instrument and active experiments in case the app closes. Only the `Device` class (and `timecourse.py` script) interact directly with the instrument.
