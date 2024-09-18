@@ -15,9 +15,10 @@ shiny_example.py
 *.tsv
 !Calibration.tsv
 shiny_example.py
+!Multitube_OD_0.2.4.exe
+test_multitube_app.py
 Sampling.py
-*.png
-*.jpg
+cover.png
 *.spec
 /my_app/build*
 *.exe
@@ -28,4 +29,5 @@ Sampling.py
 *.exe
 Launch.py
 *.zip
+*.pkl
 hidden_navigation_module.py
