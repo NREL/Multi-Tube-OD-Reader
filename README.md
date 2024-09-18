@@ -41,27 +41,27 @@ This should open your default web browser and show the user interface.
 ### User Interface
 #### Home: 
 - View & interact with ongoing Experiments.
-![Image of Home Page with growth curve data showing for an active experiment](/../Multi-Tube-OD-Reader/Screenshots/Home%20Page%20with%20active%20experiment.png)
+![Image of Home Page with growth curve data showing for an active experiment](/Screenshots/Home%20Page%20with%20active%20experiment.png)
 
 - Safeguards protect from accidentally stopping the run.
-![Image of Home Page with a popup confirming user's intention to shut down the run](/../Multi-Tube-OD-Reader/Screenshots/Home%20Page%20with%20Stop-Run%20confirmation.png)
+![Image of Home Page with a popup confirming user's intention to shut down the run](/Screenshots/Home%20Page%20with%20Stop-Run%20confirmation.png)
 
 #### Start New Run:
 - Step 1: Experiment name and measurement interval
-![Image of Start New Run page accepting experiment name and time interval inputs](/../Multi-Tube-OD-Reader/Screenshots/Start%20New%20Run%20Step%201.png)
+![Image of Start New Run page accepting experiment name and time interval inputs](/Screenshots/Start%20New%20Run%20Step%201.png)
 
 - Safeguards to protect from overwriting previous data files.
-![Image of Start New Run page warning user that the file name already exists](/../Multi-Tube-OD-Reader/Screenshots/Start%20New%20Run%20Invalid%20Name%20Warning.png)
+![Image of Start New Run page warning user that the file name already exists](/Screenshots/Start%20New%20Run%20Invalid%20Name%20Warning.png)
 
-- Step 2: Select device and number of Ports. We named our devices based on the incubators they live in. ![Image of Start New Run page showing options for attached devices and number of available ports](/../Multi-Tube-OD-Reader/Screenshots/Start%20New%20Run%20Step%202.png)
+- Step 2: Select device and number of Ports. We named our devices based on the incubators they live in. ![Image of Start New Run page showing options for attached devices and number of available ports](/Screenshots/Start%20New%20Run%20Step%202.png)
 
-- Step 3: Place growth tubes. Ports are automatically assigned based on availability. ![Image of Start New Run page showing instructions on where to place culture tubes](/../Multi-Tube-OD-Reader/Screenshots/Start%20New%20Run%20Step%203.png)
+- Step 3: Place growth tubes. Ports are automatically assigned based on availability. ![Image of Start New Run page showing instructions on where to place culture tubes](/Screenshots/Start%20New%20Run%20Step%203.png)
 
-- Complete: The User is automatically redirected to the Home Page with the New Experiment added to the list of Active Experiments. ![Image of Home Page with a new experiment added](/../Multi-Tube-OD-Reader/Screenshots/Home%20Page%20with%20New%20active%20experiment.png)
+- Complete: The User is automatically redirected to the Home Page with the New Experiment added to the list of Active Experiments. ![Image of Home Page with a new experiment added](/Screenshots/Home%20Page%20with%20New%20active%20experiment.png)
 
 #### Configure Hardware:
 - Identify and Rename devices. The Blink button makes the indicator LED blink on the device. 
-![Image of Configure Hardware page showing options to select a device, make it blink and rename it](/../Multi-Tube-OD-Reader/Screenshots/Manage%20Hardware%20Page.png)
+![Image of Configure Hardware page showing options to select a device, make it blink and rename it](/Screenshots/Manage%20Hardware%20Page.png)
 
 #### Calibration: 
 Performed mostly offline, no tab for this function
