@@ -1,5 +1,5 @@
-shiny
-shinyswatch
+shiny==1.1.0
+shinyswatch==0.7.0
 pandas==2.2.0
 matplotlib==3.8.2
 numpy==1.26.3
