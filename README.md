@@ -79,7 +79,7 @@ The hardware requires two connections:
 	- USB splitters can be used to branch one USB cable from the computer to multiple Devices. This can help reduce the number of cables passing through the incubator.
 2. A power supply cable providing up to about 0.5 amps of 5V DC electrical power.
 #### Software
-The app requires a U3-compatible driver from [LabJack.com](https://support.labjack.com/docs/labjackpython-for-ud-exodriver-u12-windows-mac-lin).
+The app requires a Python environment and a U3-compatible driver from [LabJack.com](https://support.labjack.com/docs/labjackpython-for-ud-exodriver-u12-windows-mac-lin).
 - For Windows: the UD Driver
 - Linux macOS: the Exodriver 
 
