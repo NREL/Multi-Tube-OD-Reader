@@ -126,7 +126,7 @@ The app was written in Python using modules in a three-tier architecture:
 
 [Back to top](#overview)
 ### License
-The hardware and software were built from open source resources. The material in this repository were developed at the National Renewable Energy Laboratory under the Laboratory-Directed Research & Development program. The materials in this repository are subject to the BSD-3-Clause License. 
+The hardware and software were built from open source resources. The material in this repository were developed at the National Renewable Energy Laboratory, with the code being reported under SWR-24-126. The materials in this repository are subject to the BSD-3-Clause License. 
 
 **No Guarantees:**
 - **Accuracy:** We make no representations or warranties about the accuracy, reliability, completeness, or timeliness of the content. The instructions and information provided may contain errors or inaccuracies.
