@@ -67,8 +67,8 @@ This should open your default web browser and show the user interface.
 Performed mostly offline, no tab for this function
 - Prepare reference tubes to several known optical densities. 
 - Measure each reference level using each port the Multi-Tube-OD-Reader
-- Transform raw Voltage data to log$_{10}$( Voltage ) 
-- Fit a line with y = Known data and x = log$_{10}$( Voltage )
+- Transform raw Voltage data to log<sub>10</sub>( Voltage ) 
+- Fit a line with y = Known data and x = log<sub>10</sub>( Voltage )
 - Update the slope & intercept for each port and other relevant data into the `Calibration.tsv` found in the `my_app` directory.
 
 [Back to top](#overview)
