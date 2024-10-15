@@ -171,6 +171,10 @@ class Experiment:
         """
         path_to_script = resource_path("timecourse.py")
         pickle_path = get_config_path()
+        #to do: this calls python external to the executable. Can we call the frozen interpreter?
+        #sys.executable, while frozen, calls mtodr.exe, not python.exe. that's why 
+        #terminal shows reload of app after starting new run. 
+        #will runpy do this?
         command = ["python", path_to_script, self.path, pickle_path]
         pid = subprocess.Popen(command, creationflags = subprocess.CREATE_NO_WINDOW).pid
         print("pid: ", pid)
