@@ -41,7 +41,6 @@ Experiment.reconcile_pickle()
 CALIBRATION_PATH = get_config_path().parents[0] / "Calibration.tsv"  
 
 app_ui = ui.page_navbar(
-    theme.materia(),
     ui.nav_panel(
         "Home",
         ui.layout_sidebar( 
@@ -67,6 +66,7 @@ app_ui = ui.page_navbar(
         "Troubleshooting",
         ui.output_ui("troubleshooting"),
     ),
+    theme = theme.materia(),
     title="MultiTubeOD",
     id = "front_page_navs" 
 )
