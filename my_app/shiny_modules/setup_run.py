@@ -129,7 +129,7 @@ def setup_ui():
     return ui.page_fluid(
         ui.layout_sidebar(
             ui.sidebar(
-                ui.output_text("trouble_shooting_output"), #place holder for development
+                #ui.output_text("trouble_shooting_output"), #place holder for development
                 ui.markdown(
                     """
                     ### Instructions:
