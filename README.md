@@ -1,5 +1,5 @@
 # Multi-Tube-OD-Reader
-## Authored by Skyler Hebdon, PhD
+### Author: Skyler Hebdon, PhD
 ### Overview
 Our **Multi-Tube-OD-Reader** device is based on the TubeOD reader [published here](https://doi.org/10.3389/fmicb.2021.790576), but with a housing to maximize throughput.
 
